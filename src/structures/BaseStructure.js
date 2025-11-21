@@ -1,5 +1,5 @@
 export default class Structure {
-  constructor(id, wx, wy, tx, ty, sprite, radius) {
+  constructor(id, wx, wy, tx, ty, sprite, radius = 8) {
     this.id = id;
     this.px = wx;
     this.py = wy;
@@ -29,7 +29,7 @@ export default class Structure {
     this.currentHealth = maxHealth;
   }
 
-  setCurrentHealth(currentHealth, scene) {
+  setCurrentHealth(currentHealth) {
     this.currentHealth = currentHealth;
   }
 

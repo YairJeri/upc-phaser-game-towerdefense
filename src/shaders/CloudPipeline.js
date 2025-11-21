@@ -11,6 +11,7 @@ uniform int cloudCount;
 uniform vec2 resolution;
 uniform vec2 cameraScroll;
 uniform float time;
+uniform float cameraZoom;
 
 // atlas info según tu canvas
 uniform float frameWidth;   // 160
@@ -33,6 +34,10 @@ vec2 getFrameUV(float frameIndex, vec2 uv) {
 void main() {
     vec2 pos = vec2(gl_FragCoord.x, resolution.y - gl_FragCoord.y);
     vec4 base = texture2D(uMainSampler, outTexCoord);
+        float zoomCorrection = (cameraZoom - 1.0) / 2.0;
+
+        float correctionX = resolution.x * zoomCorrection;
+        float correctionY = resolution.y * zoomCorrection;
 
     vec3 cloudColor = vec3(1.0);
     float alpha = 0.0;
@@ -41,8 +46,12 @@ void main() {
         if(i >= cloudCount) break;
 
         vec4 c = uClouds[i];
-        vec2 cloudPos = c.xy - cameraScroll;
-        float scale = c.z;
+        vec2 cloudPos = (c.xy - cameraScroll) * cameraZoom;
+
+        cloudPos.x -= correctionX;
+        cloudPos.y -= correctionY;
+        
+        float scale = c.z* cameraZoom;
         float frame = c.w;
 
         // calcula posición relativa dentro de la nube

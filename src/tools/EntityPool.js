@@ -124,17 +124,30 @@ class Entity {
     this.sprite.setVisible(false).setActive(false);
   }
 
-  attack() {
+  attack(structure) {
     if (this.isAttacking) return;
     this.isAttacking = true;
 
     this.sprite.play("enemy_attack");
     this.sprite.anims.timeScale = 1;
-    this.sprite.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
-      this.sprite.play("enemy_run");
-      this.sprite.anims.timeScale = 1;
-      this.isAttacking = false;
-    });
+
+    this.sprite.once(
+      Phaser.Animations.Events.ANIMATION_COMPLETE,
+      (animation) => {
+        if (animation.key === "enemy_attack") {
+          this.sprite.play("enemy_run");
+          this.sprite.anims.timeScale = 1;
+          this.isAttacking = false;
+
+          if (structure) {
+            structure.setCurrentHealth(structure.currentHealth - 1);
+            if (structure.currentHealth <= 0) {
+              structure.isDestroyed = true;
+            }
+          }
+        }
+      }
+    );
   }
 
   death() {

@@ -41,8 +41,6 @@ export default class StructureManager {
       lightId
     );
 
-    structure.setMaxHealth(StructureTypes.Main.health);
-
     this.structures.set(id, structure);
 
     this.byTile.set(this.hash(tx, ty), id);
@@ -121,8 +119,6 @@ export default class StructureManager {
       sprite,
       lightId
     );
-
-    structure.setMaxHealth(15);
 
     this.structures.set(id, structure);
     this.byTile.set(this.hash(tx, ty), id);

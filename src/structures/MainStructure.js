@@ -8,14 +8,15 @@ export default class MainStructure extends Structure {
     this.setType(StructureTypes.Main.id);
     this.setLightId(lightId);
     this.setMaxHealth(StructureTypes.Main.health);
+    this.scene = scene;
   }
 
-  setCurrentHealth(currentHealth, scene) {
-    super.setCurrentHealth(currentHealth, scene);
-    scene.game.events.emit("CurrentHealth", this.currentHealth);
+  setCurrentHealth(currentHealth) {
+    super.setCurrentHealth(currentHealth);
+    this.scene.game.events.emit("CurrentHealth", this.currentHealth);
 
     if (this.currentHealth <= 0) {
-      scene.game.events.emit("GameOver", this);
+      this.scene.game.events.emit("GameOver", this);
     }
   }
 }

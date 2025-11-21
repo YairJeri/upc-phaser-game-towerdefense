@@ -8,6 +8,7 @@ precision highp int;
     uniform int lightCount;
     uniform vec2 resolution;
     uniform int uLights[512];
+    uniform float cameraZoom;
 
     uniform vec2 cameraScroll;
 
@@ -25,18 +26,26 @@ precision highp int;
         vec2 pos = vec2(gl_FragCoord.x, resolution.y - gl_FragCoord.y);
         float cellsize = 16.0;
 
+        float zoomCorrection = (cameraZoom - 1.0) / 2.0;
+
+        float correctionX = resolution.x * zoomCorrection;
+        float correctionY = resolution.y * zoomCorrection;
+
         float fog = 1.0;
 
         for (int i = 0; i < 512; i++) {
             if (i >= lightCount) break;
 
-            vec3 light = unpackLight(uLights[i]);
 
-            vec2 lightPos = light.xy * cellsize - cameraScroll;
-            float radius = light.z * cellsize;
+            vec3 light = unpackLight(uLights[i]);
+            vec2 lightPos = (light.xy * cellsize - cameraScroll)  * cameraZoom;
+            lightPos.x -= correctionX;
+            lightPos.y -= correctionY;
+            float radius = light.z * cellsize * cameraZoom;
+
 
             float dist = distance(pos, lightPos);
-            float contribution = 1.0 - smoothstep(radius * 0.6, radius, dist);
+            float contribution = 1.0 - smoothstep(radius *0.6, radius, dist);
 
             fog *= (1.0 - contribution);
         }
@@ -67,6 +76,9 @@ export class LightPipeline extends Phaser.Renderer.WebGL.Pipelines
   }
   setLightCount(count) {
     this.set1i("lightCount", count);
+  }
+  setCameraZoom(zoom) {
+    this.set1f("cameraZoom", zoom);
   }
 
   onPreRender() {}

@@ -9,6 +9,7 @@ import NavigationSystem from "../systems/NavigationSystem.js";
 import ProjectilePool from "../tools/ProyectilePool.js";
 import WaveSystem from "../systems/WaveSystem.js";
 import EconomySystem from "../systems/EconomySystem.js";
+import SoundSystem from "../systems/SoundSystem.js";
 
 export class MainScene extends Phaser.Scene {
   constructor() {
@@ -93,8 +94,9 @@ export class MainScene extends Phaser.Scene {
       this.navigationSystem
     );
     this.proyectilePool = new ProjectilePool(this, 1000);
-    this.waveSystem = new WaveSystem(this, this.enemySystem);
+    this.waveSystem = new WaveSystem(this, this.enemySystem, this.buildSystem);
     this.economySystem = new EconomySystem(this, 500);
+    this.soundSystem = new SoundSystem(this);
   }
 
   initEmitters() {
@@ -153,7 +155,7 @@ export class MainScene extends Phaser.Scene {
 
     this.flowGraphics = this.add.graphics();
 
-    this.flowGraphics.lineStyle(1, 0xff0000, 1);
+    this.flowGraphics.lineStyle(2, 0xff0000, 1);
 
     this.buildSystem.generateColliders();
 
@@ -165,9 +167,11 @@ export class MainScene extends Phaser.Scene {
       Phaser.Input.Keyboard.KeyCodes.SPACE
     );
 
-    this.space.on("down", () => {
-      this.economySystem.spendMoney(10);
-    });
+    // this.debug.clear();
+    // this.debug.lineStyle(10, 0xff0000, 1);
+    // this.drawWalls();
+    this.space.on("down", () => {});
+
     this.input.on("pointermove", (pointer) => {
       this.handleCameraMovement(pointer);
       const worldX = pointer.worldX;
@@ -192,8 +196,6 @@ export class MainScene extends Phaser.Scene {
 
     this.input.on("pointerup", (pointer) => {
       console.log("Tile clickeado:", this.actTileX, this.actTileY);
-
-      this.flowGraphics.clear();
       if (pointer.button === 1) {
       }
       if (pointer.button === 0) {
@@ -211,6 +213,8 @@ export class MainScene extends Phaser.Scene {
           );
         }
       }
+
+      // this.navigationSystem.flowFieldDynamic.drawFlowField(this.debug);
     });
   }
 
@@ -268,6 +272,14 @@ export class MainScene extends Phaser.Scene {
     this.cameraVelX = 0;
     this.cameraVelY = 0;
 
+    const desiredZoomFactor = 3;
+    const zoomX = cam.width / (this.mapWidth / desiredZoomFactor);
+    const zoomY = cam.height / (this.mapHeight / desiredZoomFactor);
+
+    const zoom = Math.min(zoomX, zoomY);
+
+    cam.setZoom(zoom);
+
     cam.centerOn(this.mapWidth / 2, this.mapHeight / 2);
   }
 
@@ -316,16 +328,19 @@ export class MainScene extends Phaser.Scene {
     camera.scrollX += this.cameraVelX * dt;
     camera.scrollY += this.cameraVelY * dt;
 
-    camera.scrollX = Phaser.Math.Clamp(
-      camera.scrollX,
-      0,
-      this.mapWidth - camera.width
-    );
-    camera.scrollY = Phaser.Math.Clamp(
-      camera.scrollY,
-      0,
-      this.mapHeight - camera.height
-    );
+    // camera.scrollX = Phaser.Math.Clamp(
+    //   camera.scrollX,
+    //   -camera.width / (camera.zoom),
+    //   this.mapWidth * camera.zoom - camera.width
+    // );
+
+    // console.log(camera.scrollX, camera.scrollY);
+    // camera.scrollY = Phaser.Math.Clamp(
+    //   camera.scrollY,
+
+    //   -camera.height / (camera.zoom * 2),
+    //   this.mapHeight * camera.zoom - camera.height
+    // );
   }
 
   update(time, dt_ms) {

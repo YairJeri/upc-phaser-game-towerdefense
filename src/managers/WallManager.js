@@ -8,6 +8,7 @@ export default class WallManager {
 
     this.tiles = new Set();
     this.playerTiles = new Set();
+    this.allTiles = new Set();
 
     for (let i = 0; i < walls.length; i += 2) {
       this.addMapWall(walls[i], walls[i + 1]);
@@ -32,35 +33,47 @@ export default class WallManager {
     return [...this.tiles, ...this.playerTiles];
   }
 
+  getSetWalls() {
+    return this.allTiles;
+  }
+
   inBounds(x, y) {
     return x >= 0 && y >= 0 && x < this.width && y < this.height;
   }
 
   addMapWall(x, y) {
-    if (this.inBounds(x, y)) this.tiles.add(this.hash(x, y));
+    if (this.inBounds(x, y)) {
+      this.tiles.add(this.hash(x, y));
+      this.allTiles.add(this.hash(x, y));
+    }
   }
 
   removeMapWall(x, y) {
     this.tiles.delete(this.hash(x, y));
+    this.allTiles.delete(this.hash(x, y));
   }
 
   addPlayerWall(x, y) {
-    if (this.inBounds(x, y)) this.playerTiles.add(this.hash(x, y));
+    if (this.inBounds(x, y)) {
+      this.playerTiles.add(this.hash(x, y));
+      this.allTiles.add(this.hash(x, y));
+    }
   }
 
   removePlayerWall(x, y) {
     this.playerTiles.delete(this.hash(x, y));
+    this.allTiles.delete(this.hash(x, y));
   }
 
   hasWall(x, y) {
     if (!this.inBounds(x, y)) return false;
-    return (
-      this.tiles.has(this.hash(x, y)) || this.playerTiles.has(this.hash(x, y))
-    );
+    return this.allTiles.has(this.hash(x, y));
   }
 
   clear() {
     this.tiles.clear();
+    this.allTiles.clear();
+    this.playerTiles.clear();
   }
 
   generateEdges() {

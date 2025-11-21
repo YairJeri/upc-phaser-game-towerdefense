@@ -81,6 +81,8 @@ export class Preloader extends Phaser.Scene {
       "assets/fonts/bitmap/thick_8x8.png",
       "assets/fonts/bitmap/thick_8x8.xml"
     );
+
+    this.load.audio("explosion", "assets/sounds/explosion.mp3");
   }
 
   create() {

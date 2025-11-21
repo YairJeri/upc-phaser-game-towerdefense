@@ -1,3 +1,4 @@
+import { walls } from "../other/walls.js";
 import FlowField from "../tools/FlowField.js";
 
 export default class NavigationSystem {
@@ -16,6 +17,20 @@ export default class NavigationSystem {
       this.height,
       this.cell_size
     );
+
+    this.staticWorker = new Worker("/src/workers/flowfieldWorker.js");
+    this.dynamicWorker = new Worker("/src/workers/flowfieldWorker.js");
+
+    this.staticWorker.onmessage = (e) => {
+      this.flowFieldStatic.dists = e.data;
+      this.flowFieldStatic.calculateAngles();
+      this.flowFieldStatic.smoothFlowComponents(10);
+    };
+    this.dynamicWorker.onmessage = (e) => {
+      this.flowFieldDynamic.dists = e.data;
+      this.flowFieldDynamic.calculateAngles();
+      this.flowFieldDynamic.smoothFlowComponents(10);
+    };
   }
 
   generateStatic(targets, buildSystem) {
@@ -25,19 +40,46 @@ export default class NavigationSystem {
 
   removeMapWall(tx, ty) {
     this.flowFieldStatic.removeWall(tx, ty);
-    this.flowFieldStatic.regenerateFull();
     this.flowFieldDynamic.removeWall(tx, ty);
-    this.flowFieldDynamic.regenerateFull();
+
+    this.staticWorker.postMessage({
+      width: this.flowFieldStatic.width,
+      height: this.flowFieldStatic.height,
+      cell_size: this.cell_size,
+      targets: this.flowFieldStatic.targets,
+      walls: this.flowFieldStatic.walls,
+    });
+    this.dynamicWorker.postMessage({
+      width: this.flowFieldStatic.width,
+      height: this.flowFieldStatic.height,
+      cell_size: this.cell_size,
+      targets: this.flowFieldDynamic.targets,
+      walls: this.flowFieldDynamic.walls,
+    });
   }
 
   addObstacle(tx, ty) {
     this.flowFieldDynamic.setWall(tx, ty);
-    this.flowFieldDynamic.regenerateFull();
+    console.log("adding obstacle");
+    this.dynamicWorker.postMessage({
+      width: this.flowFieldStatic.width,
+      height: this.flowFieldStatic.height,
+      cell_size: this.cell_size,
+      targets: this.flowFieldDynamic.targets,
+      walls: this.flowFieldDynamic.walls,
+    });
   }
 
   removeObstacle(tx, ty) {
     this.flowFieldDynamic.removeWall(tx, ty);
-    this.flowFieldDynamic.regenerateFull();
+
+    this.dynamicWorker.postMessage({
+      width: this.flowFieldStatic.width,
+      height: this.flowFieldStatic.height,
+      cell_size: this.cell_size,
+      targets: this.flowFieldDynamic.targets,
+      walls: this.flowFieldDynamic.walls,
+    });
   }
 
   getVector(x, y) {

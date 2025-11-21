@@ -1,7 +1,5 @@
-const USE_UINT16 = true;
-
-const NO_DIST = USE_UINT16 ? 0xffff : 0xff;
-const DistArray = USE_UINT16 ? Uint16Array : Uint8Array;
+const NO_DIST = 0xffff;
+const DistArray = Uint16Array;
 
 export default class FlowField {
   constructor(width, height, cellSize) {
@@ -206,6 +204,7 @@ export default class FlowField {
     this.setWalls(walls);
     this.BFS(targets);
     this.calculateAngles();
+    this.smoothFlowComponents(10);
   }
 
   regenerateFull() {
@@ -221,9 +220,10 @@ export default class FlowField {
     this.calculateAngles();
   }
 
-  drawFlowField(ctx, scene) {
-    ctx.clear();
+  printFlowField() {
+    let text = "";
     for (let y = 0; y < this.height; y++) {
+      text += y.toString() + " ";
       for (let x = 0; x < this.width; x++) {
         const px = x * this.cellSize;
         const py = y * this.cellSize;
@@ -235,9 +235,35 @@ export default class FlowField {
         let blocked = dist === NO_DIST;
 
         if (blocked) {
-          ctx.fillStyle(0x000000, 0.3);
+          text += "X\t";
         } else {
-          ctx.fillStyle(0x00ff00, 0.3);
+          text += dist.toString() + "\t";
+        }
+      }
+      console.log(text);
+      text = "";
+    }
+  }
+  drawFlowField(graphics) {
+    graphics.clear();
+    for (let y = 0; y < this.height; y++) {
+      let text = y.toString() + " ";
+      for (let x = 0; x < this.width; x++) {
+        const px = x * this.cellSize;
+        const py = y * this.cellSize;
+        const dist = this.dists[this._index(x, y)];
+
+        const flowX = this.flow[this._index(x, y) * 2];
+        const flowY = this.flow[this._index(x, y) * 2 + 1];
+
+        let blocked = dist === NO_DIST;
+
+        if (blocked) {
+          text += "X\t";
+          graphics.fillStyle(0x000000, 0.3);
+        } else {
+          graphics.fillStyle(0x00ff00, 0.3);
+          text += dist.toString() + "\t";
         }
         const centerX = px + this.cellSize / 2;
         const centerY = py + this.cellSize / 2;
@@ -247,12 +273,13 @@ export default class FlowField {
           const endX = centerX + flowX * scale;
           const endY = centerY + flowY * scale;
 
-          ctx.beginPath();
-          ctx.moveTo(centerX, centerY);
-          ctx.lineTo(endX, endY);
-          ctx.stroke();
+          graphics.beginPath();
+          graphics.moveTo(centerX, centerY);
+          graphics.lineTo(endX, endY);
+          graphics.stroke();
         }
       }
+      // console.log(text);
     }
   }
 

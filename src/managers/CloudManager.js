@@ -39,6 +39,7 @@ export default class CloudManager {
     this.pipeline.set1i("cloudCount", this.clouds.length);
     this.pipeline.set2f("resolution", cam.width, cam.height);
     this.pipeline.set2f("cameraScroll", cam.scrollX, cam.scrollY);
+    this.pipeline.set1f("cameraZoom", cam.zoom);
     this.pipeline.set1f("time", dt);
   }
 

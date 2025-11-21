@@ -6,8 +6,10 @@ import { GameOver } from "./scenes/GameOver.js";
 
 const config = {
   type: Phaser.WEBGL,
-  width: 1280,
-  height: 720,
+  width: window.innerWidth,
+  height: window.innerHeight,
+  // width: 1280,
+  // height: 720,
   parent: "game-container",
   backgroundColor: "#2d3436",
   multiTexture: true,

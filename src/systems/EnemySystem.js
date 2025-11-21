@@ -136,13 +136,8 @@ export default class EnemySystem {
 
   attack(entity, tower) {
     if (entity.isAttacking) return;
-    tower.setCurrentHealth(tower.currentHealth - 1, this.scene);
 
-    if (tower.currentHealth <= 0) {
-      tower.isDestroyed = true;
-    }
-
-    entity.attack();
+    entity.attack(tower);
   }
 
   circleSegmentCollision(cx, cy, r, x1, y1, x2, y2) {

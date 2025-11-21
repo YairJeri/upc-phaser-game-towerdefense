@@ -3,12 +3,12 @@ import StructureTypes from "../other/StructureInfo.js";
 
 export default class AreaDamageTower extends Structure {
   constructor(scene, id, wx, wy, tx, ty, sprite, lightId) {
-    super(id, wx, wy, tx, ty, sprite, 16);
+    super(id, wx, wy, tx, ty, sprite);
 
     this.setType(StructureTypes.Tower2.id);
     this.setRange(StructureTypes.Tower2.range);
     this.setLightId(lightId);
-    this.setMaxHealth(100);
+    this.setMaxHealth(StructureTypes.Tower2.health);
 
     this.target = null;
     this.damage = StructureTypes.Tower2.damage;

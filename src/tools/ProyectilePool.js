@@ -82,7 +82,6 @@ class Projectile {
     this.vx = 0;
     this.vy = 0;
     this.damage = 0;
-    this.target = null;
     this.areaDamageRadius = 0;
     this.isActive = false;
     this.speed = 400;
@@ -95,7 +94,7 @@ class Projectile {
   activate(x, y, target, damage, areaDamageRadius = 0) {
     this.px = x;
     this.py = y;
-    this.target = target;
+    target;
     this.damage = damage;
     this.areaDamageRadius = areaDamageRadius;
 
@@ -129,27 +128,37 @@ class Projectile {
   update(dt, enemySystem, scene) {
     if (!this.isActive) return;
 
-    if (this.target.health <= 0 && !this.target.isDying) {
+    if (
+      this.px < 0 ||
+      this.px > scene.mapWidth ||
+      this.py < 0 ||
+      this.py > scene.mapHeight
+    ) {
       this.deactivate();
+      return;
     }
 
     this.px += this.vx * dt;
     this.py += this.vy * dt;
     this.sprite.setPosition(this.px, this.py);
 
-    const dx = this.target.px - this.px;
-    const dy = this.target.py - this.py;
-    const distSq = dx * dx + dy * dy;
+    const nearbyEnemies = enemySystem.query(this.px, this.py, 12);
     const hitRadius = 12;
 
-    if (distSq < hitRadius * hitRadius) {
-      if (this.isAreaDamage) {
-        this.applyAreaDamage(enemySystem);
-        this.deactivate();
-        scene.explosionEmitter.explode(20, this.px, this.py);
-      } else {
-        this.target.takeDamage(this.damage);
-        this.deactivate();
+    for (let enemy of nearbyEnemies) {
+      const dx = enemy.px - this.px;
+      const dy = enemy.py - this.py;
+      const distSq = dx * dx + dy * dy;
+      if (distSq < hitRadius * hitRadius) {
+        if (this.isAreaDamage) {
+          this.applyAreaDamage(enemySystem);
+          scene.soundSystem.playEffect(0.05);
+          this.deactivate();
+          scene.explosionEmitter.explode(20, this.px, this.py);
+        } else {
+          enemy.takeDamage(this.damage);
+          this.deactivate();
+        }
       }
     }
   }
