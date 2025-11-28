@@ -3,6 +3,7 @@ import LightSystem from "../managers/LightSystem.js";
 import StructureManager from "../managers/StructureManager.js";
 import SpatialHash from "../tools/SpatialHash.js";
 import StructureTypes from "../other/StructureInfo.js";
+import { walls } from "../other/walls.js";
 
 export default class BuildSystem {
   constructor(scene, width, height, cell_size, NavigationSystem) {
@@ -179,6 +180,37 @@ export default class BuildSystem {
       this.lightSystem.removeLight(structure.lightId);
       this.structureManager.removeStructure(structure.id);
     }
+  }
+
+  reset() {
+    // Clear all structures except main structure
+    const structuresToRemove = [];
+    for (let [id, structure] of this.structureManager.structures) {
+      if (structure.type !== StructureTypes.Main.id) {
+        structuresToRemove.push(structure);
+      }
+    }
+
+    for (let structure of structuresToRemove) {
+      this.removeStructureObj(structure);
+    }
+
+    // Reset wall manager to initial state
+    this.wallManager.clear();
+    // Re-add map walls
+    for (let i = 0; i < walls.length; i += 2) {
+      this.wallManager.addMapWall(walls[i], walls[i + 1]);
+    }
+
+    // Reset light system
+    this.lightSystem.reset();
+
+    // Clear hashes
+    this.wallHash.clear();
+    this.structureHash.clear();
+
+    // Regenerate colliders
+    this.generateColliders();
   }
 
   update(dt, enemySystem, ProjectilePool) {

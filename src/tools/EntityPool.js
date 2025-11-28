@@ -71,6 +71,15 @@ export default class EntityPool {
   getFreeCount() {
     return this.freeIndexs.length;
   }
+
+  clear() {
+    // Despawn all active entities
+    while (this.activeIndexs.length > 0) {
+      const index = this.activeIndexs[this.activeIndexs.length - 1];
+      const enemy = this.pool[index];
+      this.despawn(enemy);
+    }
+  }
 }
 
 class Entity {

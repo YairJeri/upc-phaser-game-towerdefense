@@ -63,6 +63,22 @@ export default class ProjectilePool {
     }
   }
 
+  reset() {
+    // Deactivate all active projectiles
+    for (let i = 0; i < this.activeIndexes.length; i++) {
+      const projectile = this.pool[this.activeIndexes[i]];
+      projectile.deactivate();
+    }
+
+    // Reset pool state
+    this.freeIndexes = [];
+    this.activeIndexes = [];
+
+    for (let i = 0; i < this.size; i++) {
+      this.freeIndexes.push(i);
+    }
+  }
+
   update(dt, enemySystem, scene) {
     for (let i = 0; i < this.activeIndexes.length; i++) {
       const projectile = this.pool[this.activeIndexes[i]];

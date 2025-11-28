@@ -137,6 +137,10 @@ export class MainScene extends Phaser.Scene {
 
     this.economySystem.addMoney(500);
 
+    // Remove old listeners to prevent duplicates on restart
+    this.game.events.off("TowerChange");
+    this.game.events.off("GameOver");
+
     this.game.events.on("TowerChange", (tower) => {
       this.actualTower = tower;
     });
@@ -167,10 +171,20 @@ export class MainScene extends Phaser.Scene {
 
     this.buildSystem.generateColliders();
 
+    // Check if we need to reset the game
+    if (this.game.registry.get("restartGame")) {
+      this.game.registry.set("restartGame", false);
+      this.resetGame();
+    }
+
     this.initInputs();
   }
   condition = false;
   initInputs() {
+    // Remove old input listeners to prevent duplicates on restart
+    this.input.off("pointermove");
+    this.input.off("pointerup");
+
     this.space = this.input.keyboard.addKey(
       Phaser.Input.Keyboard.KeyCodes.SPACE
     );
@@ -349,6 +363,52 @@ export class MainScene extends Phaser.Scene {
     //   -camera.height / (camera.zoom * 2),
     //   this.mapHeight * camera.zoom - camera.height
     // );
+  }
+
+  resetGame() {
+    // Reset wave system
+    this.waveSystem.currentWaveIndex = 0;
+    this.waveSystem.isWaveActive = false;
+    this.waveSystem.spawnedEnemies = 0;
+    this.waveSystem.timeSinceLastSpawn = 0;
+
+    // Reset economy system
+    this.economySystem.money = 500;
+    this.economySystem.updateUI();
+
+    // Reset build system - clear all structures except main structure
+    this.buildSystem.reset();
+
+    // Reset enemy system
+    this.enemySystem.reset();
+
+    // Reset projectile pool
+    this.proyectilePool.reset();
+
+    // Reset actual tower selection
+    this.actualTower = null;
+
+    // Reset game registry values
+    this.game.registry.set("finalWave", 1);
+    this.game.registry.set("finalMoney", 0);
+    this.game.registry.set("finalEnemies", 0);
+
+    // Re-add main structure
+    this.buildSystem.addMainStructure(12);
+
+    // Regenerate navigation
+    const targets = [
+      (this.mapWidth - 16) / 2,
+      (this.mapHeight - 16) / 2,
+      (this.mapWidth - 16) / 2 + 32,
+      (this.mapHeight - 16) / 2,
+      (this.mapWidth - 16) / 2,
+      (this.mapHeight - 16) / 2 + 32,
+      (this.mapWidth - 16) / 2 + 32,
+      (this.mapHeight - 16) / 2 + 32,
+    ];
+    this.navigationSystem.generateStatic(targets, this.buildSystem);
+    this.buildSystem.generateColliders();
   }
 
   update(time, dt_ms) {

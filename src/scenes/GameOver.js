@@ -4,46 +4,209 @@ export class GameOver extends Phaser.Scene {
   }
 
   create() {
-    this.add
-      .text(this.scale.width * 0.5, this.scale.height * 0.5, "GAME OVER", {
+    // Fondo oscuro con fade in
+    this.overlay = this.add.graphics();
+    this.overlay.fillStyle(0x000000, 0.8);
+    this.overlay.fillRect(0, 0, this.scale.width, this.scale.height);
+    this.overlay.setAlpha(0);
+
+    this.tweens.add({
+      targets: this.overlay,
+      alpha: 1,
+      duration: 800,
+      ease: 'Power2'
+    });
+
+    // Efecto de partículas simple (opcional, requiere configuración adicional)
+    // this.add.particles(...) - Implementar si se desea
+
+    // Texto "GAME OVER" con animación
+    this.gameOverText = this.add
+      .text(this.scale.width * 0.5, this.scale.height * 0.3, "GAME OVER", {
         fontFamily: "Arial Black",
         fontSize: 64,
-        color: "#ffffff",
-        stroke: "#000000",
-        strokeThickness: 8,
+        color: "#ff0000",
+        stroke: "#ffffff",
+        strokeThickness: 6,
         align: "center",
       })
-      .setOrigin(0.5);
-
-    const btn = this.add.text(
-      this.scale.width * 0.5,
-      this.scale.height * 0.8,
-      "Volver a Jugar",
-      {
-        fontFamily: "Arial",
-        fontSize: 32,
-        color: "#ffffff",
-        backgroundColor: "#000000",
-        padding: { x: 25, y: 12 },
-      }
-    )
       .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
+      .setAlpha(0)
+      .setScale(0.5);
 
-    btn.on("pointerover", () => {
-      btn.setStyle({ backgroundColor: "#444444" });
+    this.tweens.add({
+      targets: this.gameOverText,
+      alpha: 1,
+      scale: 1,
+      duration: 1200,
+      delay: 300,
+      ease: 'Back.easeOut'
     });
 
-    btn.on("pointerout", () => {
-      btn.setStyle({ backgroundColor: "#000000" });
+    // Texto de estadísticas
+    const finalWave = this.game.registry.get("finalWave") || 1;
+    const finalMoney = this.game.registry.get("finalMoney") || 0;
+    const finalEnemies = this.game.registry.get("finalEnemies") || 0;
+
+    this.statsText = this.add
+      .text(this.scale.width * 0.5, this.scale.height * 0.5,
+        `Oleada Alcanzada: ${finalWave}\nDinero Total: $${finalMoney}\nEnemigos Derrotados: ${finalEnemies}`, {
+        fontFamily: "Arial",
+        fontSize: 28,
+        color: "#ffffff",
+        stroke: "#000000",
+        strokeThickness: 4,
+        align: "center",
+        lineSpacing: 10
+      })
+      .setOrigin(0.5)
+      .setAlpha(0);
+
+    this.tweens.add({
+      targets: this.statsText,
+      alpha: 1,
+      duration: 1000,
+      delay: 800,
+      ease: 'Power2'
     });
 
-    btn.on("pointerdown", () => {
-      this.scene.stop("GameOver");
-      this.scene.stop("HUD");
+    // Botón "Volver a Jugar" mejorado
+    this.restartBtn = this.add.container(this.scale.width * 0.5, this.scale.height * 0.75);
 
-      this.scene.restart();   // Reinicia clean
-      this.scene.launch("HUD");
+    const btnBg = this.add.graphics();
+    btnBg.fillStyle(0x333333, 0.9);
+    btnBg.fillRoundedRect(-120, -20, 240, 40, 10);
+    btnBg.lineStyle(3, 0xffffff, 1);
+    btnBg.strokeRoundedRect(-120, -20, 240, 40, 10);
+
+    const btnText = this.add.text(0, 0, "VOLVER A JUGAR", {
+      fontFamily: "Arial Black",
+      fontSize: 24,
+      color: "#ffffff",
+      align: "center"
+    }).setOrigin(0.5);
+
+    this.restartBtn.add([btnBg, btnText]);
+    this.restartBtn.setAlpha(0);
+
+    this.tweens.add({
+      targets: this.restartBtn,
+      alpha: 1,
+      y: this.scale.height * 0.75,
+      duration: 1000,
+      delay: 1200,
+      ease: 'Power2'
     });
+
+    this.restartBtn.setInteractive(new Phaser.Geom.Rectangle(-120, -20, 240, 40), Phaser.Geom.Rectangle.Contains);
+
+    this.restartBtn.on("pointerover", () => {
+      btnBg.clear();
+      btnBg.fillStyle(0x666666, 0.9);
+      btnBg.fillRoundedRect(-120, -20, 240, 40, 10);
+      btnBg.lineStyle(3, 0xffff00, 1);
+      btnBg.strokeRoundedRect(-120, -20, 240, 40, 10);
+      btnText.setTint(0xffff00);
+    });
+
+    this.restartBtn.on("pointerout", () => {
+      btnBg.clear();
+      btnBg.fillStyle(0x333333, 0.9);
+      btnBg.fillRoundedRect(-120, -20, 240, 40, 10);
+      btnBg.lineStyle(3, 0xffffff, 1);
+      btnBg.strokeRoundedRect(-120, -20, 240, 40, 10);
+      btnText.clearTint();
+    });
+
+    this.restartBtn.on("pointerdown", () => {
+      // Efecto de click
+      this.tweens.add({
+        targets: this.restartBtn,
+        scale: 0.95,
+        duration: 100,
+        yoyo: true,
+        ease: 'Power2',
+        onComplete: () => {
+          // Set restart flag and restart MainScene
+          this.game.registry.set("restartGame", true);
+          this.scene.stop("GameOver");
+          this.scene.stop("HUD");
+          this.scene.stop("MainScene");
+          this.scene.start("MainScene");
+          this.scene.start("HUD");
+          this.scene.bringToTop("HUD");
+        }
+      });
+    });
+
+    // Botón "Salir" mejorado
+    this.exitBtn = this.add.container(this.scale.width * 0.5, this.scale.height * 0.85);
+
+    const exitBtnBg = this.add.graphics();
+    exitBtnBg.fillStyle(0x333333, 0.9);
+    exitBtnBg.fillRoundedRect(-100, -15, 200, 30, 8);
+    exitBtnBg.lineStyle(2, 0xffffff, 1);
+    exitBtnBg.strokeRoundedRect(-100, -15, 200, 30, 8);
+
+    const exitBtnText = this.add.text(0, 0, "SALIR", {
+      fontFamily: "Arial Black",
+      fontSize: 20,
+      color: "#ffffff",
+      align: "center"
+    }).setOrigin(0.5);
+
+    this.exitBtn.add([exitBtnBg, exitBtnText]);
+    this.exitBtn.setAlpha(0);
+
+    this.tweens.add({
+      targets: this.exitBtn,
+      alpha: 1,
+      y: this.scale.height * 0.85,
+      duration: 1000,
+      delay: 1400,
+      ease: 'Power2'
+    });
+
+    this.exitBtn.setInteractive(new Phaser.Geom.Rectangle(-100, -15, 200, 30), Phaser.Geom.Rectangle.Contains);
+
+    this.exitBtn.on("pointerover", () => {
+      exitBtnBg.clear();
+      exitBtnBg.fillStyle(0x666666, 0.9);
+      exitBtnBg.fillRoundedRect(-100, -15, 200, 30, 8);
+      exitBtnBg.lineStyle(2, 0xff0000, 1);
+      exitBtnBg.strokeRoundedRect(-100, -15, 200, 30, 8);
+      exitBtnText.setTint(0xff0000);
+    });
+
+    this.exitBtn.on("pointerout", () => {
+      exitBtnBg.clear();
+      exitBtnBg.fillStyle(0x333333, 0.9);
+      exitBtnBg.fillRoundedRect(-100, -15, 200, 30, 8);
+      exitBtnBg.lineStyle(2, 0xffffff, 1);
+      exitBtnBg.strokeRoundedRect(-100, -15, 200, 30, 8);
+      exitBtnText.clearTint();
+    });
+
+    this.exitBtn.on("pointerdown", () => {
+      // Efecto de click
+      this.tweens.add({
+        targets: this.exitBtn,
+        scale: 0.95,
+        duration: 100,
+        yoyo: true,
+        ease: 'Power2',
+        onComplete: () => {
+          this.scene.stop("GameOver");
+          this.scene.stop("HUD");
+          this.scene.stop("MainScene");
+          this.scene.start("Boot");
+        }
+      });
+    });
+
+    // Música de game over (si existe)
+    if (this.sound.get('gameOverMusic')) {
+      this.sound.play('gameOverMusic', { loop: true, volume: 0.3 });
+    }
   }
 }

@@ -167,6 +167,13 @@ export default class EnemySystem {
     return { hit: false, closestX, closestY };
   }
 
+  reset() {
+    // Clear all active enemies from the pool
+    this.pool.clear();
+    // Clear the spatial hash
+    this.spatialHash.clear();
+  }
+
   computeBoids(entity, nearbyEntities) {
     let steerX = 0,
       steerY = 0;

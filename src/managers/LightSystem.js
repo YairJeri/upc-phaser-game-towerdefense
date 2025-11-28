@@ -99,6 +99,13 @@ export default class LightSystem {
     this.lights.delete(id);
   }
 
+  reset() {
+    // Clear all lights
+    this.lights.clear();
+    this.grid.clear();
+    this.nextLightId = 1;
+  }
+
   update() {
     let i = 0;
     for (const light of this.lights.values()) {
