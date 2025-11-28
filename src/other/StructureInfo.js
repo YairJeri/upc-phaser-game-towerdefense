@@ -1,0 +1,50 @@
+export default {
+  Main: {
+    id: 0,
+    name: "Main",
+    cost: 0,
+    health: 200,
+  },
+  Farm: {
+    id: 3,
+    name: "Farm",
+    cost: 100,
+    income: 100,
+    health: 3,
+  },
+  Tower1: {
+    id: 9,
+    name: "Tower1",
+    cost: 50,
+    range: 10,
+    damage: 20,
+    health: 5,
+    attackCooldown: 0.5,
+  },
+  Tower2: {
+    id: 8,
+    name: "Tower2",
+    cost: 75,
+    range: 7,
+    damage: 5,
+    areaDamage: 64,
+    health: 7,
+    attackCooldown: 1,
+  },
+  Wall: {
+    id: 12,
+    name: "Wall",
+    cost: 10,
+    health: 50,
+  },
+  Bomb: {
+    id: 22,
+    name: "Bomb",
+    cost: 10,
+  },
+  Spikes: {
+    id: 23,
+    name: "Spikes",
+    cost: 10,
+  },
+};

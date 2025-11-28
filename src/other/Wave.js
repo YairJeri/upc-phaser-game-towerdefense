@@ -1,0 +1,58 @@
+export default [
+  {
+    count: 1000,
+    minTimeBetweenSpawns: 100,
+    maxTimeBetweenSpawns: 100,
+    money: 100,
+    spawnPointsToUse: 2,
+  },
+  {
+    count: 150,
+    minTimeBetweenSpawns: 100,
+    maxTimeBetweenSpawns: 100,
+    money: 200,
+    spawnPointsToUse: 3,
+  },
+  {
+    count: 300,
+    minTimeBetweenSpawns: 75,
+    maxTimeBetweenSpawns: 100,
+    money: 300,
+    spawnPointsToUse: 4,
+  },
+  {
+    count: 450,
+    minTimeBetweenSpawns: 75,
+    maxTimeBetweenSpawns: 75,
+    money: 400,
+    spawnPointsToUse: 5,
+  },
+  {
+    count: 600,
+    minTimeBetweenSpawns: 75,
+    maxTimeBetweenSpawns: 75,
+    money: 500,
+    spawnPointsToUse: 6,
+  },
+  {
+    count: 750,
+    minTimeBetweenSpawns: 50,
+    maxTimeBetweenSpawns: 75,
+    money: 600,
+    spawnPointsToUse: 7,
+  },
+  {
+    count: 900,
+    minTimeBetweenSpawns: 50,
+    maxTimeBetweenSpawns: 75,
+    money: 700,
+    spawnPointsToUse: 8,
+  },
+  {
+    count: 2000,
+    minTimeBetweenSpawns: 50,
+    maxTimeBetweenSpawns: 50,
+    money: 800,
+    spawnPointsToUse: 9,
+  },
+];
