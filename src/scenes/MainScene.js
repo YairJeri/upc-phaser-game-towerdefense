@@ -16,6 +16,14 @@ export class MainScene extends Phaser.Scene {
     super("MainScene");
   }
 
+    init() {
+    this.grid = [];
+    this.condition = false;
+    this.actualTower = null;
+    this.cameraVelX = 0;
+    this.cameraVelY = 0;
+  }
+
   preload() {
     // @ts-ignore
     this.renderer.pipelines.addPostPipeline("lights", LightPipeline);

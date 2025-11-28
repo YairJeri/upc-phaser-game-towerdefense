@@ -4,10 +4,8 @@ export class GameOver extends Phaser.Scene {
   }
 
   create() {
-    // this.background1 = this.add.image(0, 0, 'background').setOrigin(0);
-
     this.add
-      .text(this.scale.width * 0.5, this.scale.height * 0.5, "Game Over", {
+      .text(this.scale.width * 0.5, this.scale.height * 0.5, "GAME OVER", {
         fontFamily: "Arial Black",
         fontSize: 64,
         color: "#ffffff",
@@ -16,5 +14,36 @@ export class GameOver extends Phaser.Scene {
         align: "center",
       })
       .setOrigin(0.5);
+
+    const btn = this.add.text(
+      this.scale.width * 0.5,
+      this.scale.height * 0.8,
+      "Volver a Jugar",
+      {
+        fontFamily: "Arial",
+        fontSize: 32,
+        color: "#ffffff",
+        backgroundColor: "#000000",
+        padding: { x: 25, y: 12 },
+      }
+    )
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
+
+    btn.on("pointerover", () => {
+      btn.setStyle({ backgroundColor: "#444444" });
+    });
+
+    btn.on("pointerout", () => {
+      btn.setStyle({ backgroundColor: "#000000" });
+    });
+
+    btn.on("pointerdown", () => {
+      this.scene.stop("GameOver");
+      this.scene.stop("HUD");
+
+      this.scene.restart();   // Reinicia clean
+      this.scene.launch("HUD");
+    });
   }
 }
