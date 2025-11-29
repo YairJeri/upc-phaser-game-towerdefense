@@ -1,33 +1,36 @@
-import { Boot } from './scenes/Boot.js';
-import { Preloader } from './scenes/Preloader.js';
-import { Game } from './scenes/Game.js';
-import { GameOver } from './scenes/GameOver.js';
+import { Boot } from "./scenes/Boot.js";
+import { HUD } from "./scenes/HUD.js";
+import { Preloader } from "./scenes/Preloader.js";
+import { MainScene } from "./scenes/MainScene.js";
+import { GameOver } from "./scenes/GameOver.js";
 
-//  Find out more information about the Game Config at:
-//  https://newdocs.phaser.io/docs/3.70.0/Phaser.Types.Core.GameConfig
 const config = {
-    type: Phaser.AUTO,
-    width: 1280,
-    height: 720,
-    parent: 'game-container',
-    backgroundColor: '#2d3436',
-    scale: {
-        mode: Phaser.Scale.FIT,
-        autoCenter: Phaser.Scale.CENTER_BOTH
+  type: Phaser.WEBGL,
+  width: window.innerWidth,
+  height: window.innerHeight,
+  // width: 1280,
+  // height: 720,
+  parent: "game-container",
+  backgroundColor: "#2d3436",
+  multiTexture: true,
+  pixelArt: true,
+  scale: {
+    mode: Phaser.Scale.FIT,
+    autoCenter: Phaser.Scale.CENTER_BOTH,
+  },
+  physics: {
+    default: "arcade",
+    arcade: {
+      gravity: { x: 0, y: 0 },
     },
-    physics: {
-        default: 'arcade',
-        arcade: {
-            debug: false,
-            gravity: { y: 0 }
-        }
-    },
-    scene: [
-        Boot,
-        Preloader,
-        Game,
-        GameOver
-    ]
+  },
+  scene: [Boot, Preloader, HUD, MainScene, GameOver],
 };
 
-new Phaser.Game(config);
+const game = new Phaser.Game(config);
+
+window.addEventListener("unload", function () {
+  if (game) {
+    game.destroy(true);
+  }
+});
