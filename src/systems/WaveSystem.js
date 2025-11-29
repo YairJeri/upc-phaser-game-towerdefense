@@ -11,7 +11,7 @@ export default class WaveSystem {
 
     this.edgeSpawn = [
       { x: w / 2, y: h - 32, x2: w - 32, y2: h - 32 },
-      { x: w - 32, y: h - 32, x2: w - 32, y2: 32 * 7 - 32 },
+      { x: w - 32, y: h - 32, x2: w - 32, y2: 32 * 16 - 32 },
     ];
     this.currentWaveIndex = 0;
     this.isWaveActive = false;
@@ -38,9 +38,6 @@ export default class WaveSystem {
       this.wave.minTimeBetweenSpawns,
       this.wave.maxTimeBetweenSpawns
     );
-
-    console.log("wtf");
-    console.log(this.buildSystem.wallManager.getSetWalls());
   }
 
   update(delta) {
@@ -51,12 +48,13 @@ export default class WaveSystem {
 
     if (this.updateInterval >= 1) {
       this.updateInterval = 0;
-      this.scene.game.events.emit(
-        "Remaining",
-        this.wave.count -
-          (this.spawnedEnemies - this.enemySystem.pool.getActiveCount())
-      );
     }
+
+    this.scene.game.events.emit(
+      "Remaining",
+      this.wave.count -
+        (this.spawnedEnemies - this.enemySystem.pool.getActiveCount())
+    );
 
     if (this.spawnedEnemies >= this.wave.count) {
       if (this.enemySystem.pool.getActiveCount() === 0) {
@@ -82,11 +80,6 @@ export default class WaveSystem {
 
   spawnTick() {
     if (!this.isWaveActive) return;
-
-    // const availableSpawns = this.spawnPoints.slice(
-    //   0,
-    //   this.wave.spawnPointsToUse
-    // );
 
     const availableSections = this.edgeSpawn.slice(
       0,
@@ -121,22 +114,28 @@ export default class WaveSystem {
 
       const hash = ty * w + tx;
 
-      if (tx >= 55 && tx <= 56 && ty >= 57 && ty <= 59) {
-        console.log("Tile dentro del rango:", tx, ty, hash);
-      }
-
       if (!this.buildSystem.wallManager.getSetWalls().has(ty * w + tx)) {
-        // Si no está en un muro, es un punto válido
         break;
       }
 
-      // Si el punto está ocupado por un muro, aumentar el intento
       attempts++;
     } while (attempts < maxAttempts);
 
-    // const spawnPoint =
-    //   availableSpawns[Phaser.Math.Between(0, availableSpawns.length - 1)];
+    let type = "orc";
+    if (Math.random() < 0.1) {
+      type = "mage";
+    }
 
-    this.enemySystem.spawn(spawnPoint.x, spawnPoint.y, 1, 1);
+    this.enemySystem.spawn(spawnPoint.x, spawnPoint.y, type);
+  }
+
+  reset() {
+    this.currentWaveIndex = 0;
+    this.isWaveActive = false;
+    this.spawnedEnemies = 0;
+    this.timeSinceLastSpawn = 0;
+    this.spawnInterval = 0;
+    this.updateInterval = 0;
+    this.wave = null;
   }
 }

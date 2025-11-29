@@ -14,7 +14,7 @@ export class GameOver extends Phaser.Scene {
       targets: this.overlay,
       alpha: 1,
       duration: 800,
-      ease: 'Power2'
+      ease: "Power2",
     });
 
     // Efecto de partículas simple (opcional, requiere configuración adicional)
@@ -40,7 +40,7 @@ export class GameOver extends Phaser.Scene {
       scale: 1,
       duration: 1200,
       delay: 300,
-      ease: 'Back.easeOut'
+      ease: "Back.easeOut",
     });
 
     // Texto de estadísticas
@@ -49,16 +49,20 @@ export class GameOver extends Phaser.Scene {
     const finalEnemies = this.game.registry.get("finalEnemies") || 0;
 
     this.statsText = this.add
-      .text(this.scale.width * 0.5, this.scale.height * 0.5,
-        `Oleada Alcanzada: ${finalWave}\nDinero Total: $${finalMoney}\nEnemigos Derrotados: ${finalEnemies}`, {
-        fontFamily: "Arial",
-        fontSize: 28,
-        color: "#ffffff",
-        stroke: "#000000",
-        strokeThickness: 4,
-        align: "center",
-        lineSpacing: 10
-      })
+      .text(
+        this.scale.width * 0.5,
+        this.scale.height * 0.5,
+        `Oleada Alcanzada: ${finalWave}\nDinero Total: $${finalMoney}\nEnemigos Derrotados: ${finalEnemies}`,
+        {
+          fontFamily: "Arial",
+          fontSize: 28,
+          color: "#ffffff",
+          stroke: "#000000",
+          strokeThickness: 4,
+          align: "center",
+          lineSpacing: 10,
+        }
+      )
       .setOrigin(0.5)
       .setAlpha(0);
 
@@ -67,11 +71,14 @@ export class GameOver extends Phaser.Scene {
       alpha: 1,
       duration: 1000,
       delay: 800,
-      ease: 'Power2'
+      ease: "Power2",
     });
 
     // Botón "Volver a Jugar" mejorado
-    this.restartBtn = this.add.container(this.scale.width * 0.5, this.scale.height * 0.75);
+    this.restartBtn = this.add.container(
+      this.scale.width * 0.5,
+      this.scale.height * 0.75
+    );
 
     const btnBg = this.add.graphics();
     btnBg.fillStyle(0x333333, 0.9);
@@ -79,12 +86,14 @@ export class GameOver extends Phaser.Scene {
     btnBg.lineStyle(3, 0xffffff, 1);
     btnBg.strokeRoundedRect(-120, -20, 240, 40, 10);
 
-    const btnText = this.add.text(0, 0, "VOLVER A JUGAR", {
-      fontFamily: "Arial Black",
-      fontSize: 24,
-      color: "#ffffff",
-      align: "center"
-    }).setOrigin(0.5);
+    const btnText = this.add
+      .text(0, 0, "VOLVER A JUGAR", {
+        fontFamily: "Arial Black",
+        fontSize: 24,
+        color: "#ffffff",
+        align: "center",
+      })
+      .setOrigin(0.5);
 
     this.restartBtn.add([btnBg, btnText]);
     this.restartBtn.setAlpha(0);
@@ -95,10 +104,13 @@ export class GameOver extends Phaser.Scene {
       y: this.scale.height * 0.75,
       duration: 1000,
       delay: 1200,
-      ease: 'Power2'
+      ease: "Power2",
     });
 
-    this.restartBtn.setInteractive(new Phaser.Geom.Rectangle(-120, -20, 240, 40), Phaser.Geom.Rectangle.Contains);
+    this.restartBtn.setInteractive(
+      new Phaser.Geom.Rectangle(-120, -20, 240, 40),
+      Phaser.Geom.Rectangle.Contains
+    );
 
     this.restartBtn.on("pointerover", () => {
       btnBg.clear();
@@ -125,22 +137,23 @@ export class GameOver extends Phaser.Scene {
         scale: 0.95,
         duration: 100,
         yoyo: true,
-        ease: 'Power2',
+        ease: "Power2",
         onComplete: () => {
-          // Set restart flag and restart MainScene
-          this.game.registry.set("restartGame", true);
-          this.scene.stop("GameOver");
-          this.scene.stop("HUD");
-          this.scene.stop("MainScene");
-          this.scene.start("MainScene");
-          this.scene.start("HUD");
-          this.scene.bringToTop("HUD");
-        }
+          this.scene.resume("MainScene");
+          const scene = this.scene.get("MainScene");
+          // @ts-ignore
+          scene.scene.scene.resetGame();
+          this.scene.sleep("GameOver");
+          this.scene.get("HUD").scene.restart();
+        },
       });
     });
 
     // Botón "Salir" mejorado
-    this.exitBtn = this.add.container(this.scale.width * 0.5, this.scale.height * 0.85);
+    this.exitBtn = this.add.container(
+      this.scale.width * 0.5,
+      this.scale.height * 0.85
+    );
 
     const exitBtnBg = this.add.graphics();
     exitBtnBg.fillStyle(0x333333, 0.9);
@@ -148,12 +161,14 @@ export class GameOver extends Phaser.Scene {
     exitBtnBg.lineStyle(2, 0xffffff, 1);
     exitBtnBg.strokeRoundedRect(-100, -15, 200, 30, 8);
 
-    const exitBtnText = this.add.text(0, 0, "SALIR", {
-      fontFamily: "Arial Black",
-      fontSize: 20,
-      color: "#ffffff",
-      align: "center"
-    }).setOrigin(0.5);
+    const exitBtnText = this.add
+      .text(0, 0, "SALIR", {
+        fontFamily: "Arial Black",
+        fontSize: 20,
+        color: "#ffffff",
+        align: "center",
+      })
+      .setOrigin(0.5);
 
     this.exitBtn.add([exitBtnBg, exitBtnText]);
     this.exitBtn.setAlpha(0);
@@ -164,10 +179,13 @@ export class GameOver extends Phaser.Scene {
       y: this.scale.height * 0.85,
       duration: 1000,
       delay: 1400,
-      ease: 'Power2'
+      ease: "Power2",
     });
 
-    this.exitBtn.setInteractive(new Phaser.Geom.Rectangle(-100, -15, 200, 30), Phaser.Geom.Rectangle.Contains);
+    this.exitBtn.setInteractive(
+      new Phaser.Geom.Rectangle(-100, -15, 200, 30),
+      Phaser.Geom.Rectangle.Contains
+    );
 
     this.exitBtn.on("pointerover", () => {
       exitBtnBg.clear();
@@ -194,19 +212,19 @@ export class GameOver extends Phaser.Scene {
         scale: 0.95,
         duration: 100,
         yoyo: true,
-        ease: 'Power2',
+        ease: "Power2",
         onComplete: () => {
-          this.scene.stop("GameOver");
-          this.scene.stop("HUD");
-          this.scene.stop("MainScene");
-          this.scene.start("Boot");
-        }
+          // this.scene.stop("GameOver");
+          // this.scene.stop("HUD");
+          // this.scene.stop("MainScene");
+          // this.scene.start("Boot");
+        },
       });
     });
 
     // Música de game over (si existe)
-    if (this.sound.get('gameOverMusic')) {
-      this.sound.play('gameOverMusic', { loop: true, volume: 0.3 });
+    if (this.sound.get("gameOverMusic")) {
+      this.sound.play("gameOverMusic", { loop: true, volume: 0.3 });
     }
   }
 }

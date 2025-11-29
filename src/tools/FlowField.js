@@ -220,30 +220,6 @@ export default class FlowField {
     this.calculateAngles();
   }
 
-  printFlowField() {
-    let text = "";
-    for (let y = 0; y < this.height; y++) {
-      text += y.toString() + " ";
-      for (let x = 0; x < this.width; x++) {
-        const px = x * this.cellSize;
-        const py = y * this.cellSize;
-        const dist = this.dists[this._index(x, y)];
-
-        const flowX = this.flow[this._index(x, y) * 2];
-        const flowY = this.flow[this._index(x, y) * 2 + 1];
-
-        let blocked = dist === NO_DIST;
-
-        if (blocked) {
-          text += "X\t";
-        } else {
-          text += dist.toString() + "\t";
-        }
-      }
-      console.log(text);
-      text = "";
-    }
-  }
   drawFlowField(graphics) {
     graphics.clear();
     for (let y = 0; y < this.height; y++) {
@@ -279,7 +255,6 @@ export default class FlowField {
           graphics.stroke();
         }
       }
-      // console.log(text);
     }
   }
 

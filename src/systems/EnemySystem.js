@@ -3,13 +3,11 @@ import EntityPool from "../tools/EntityPool.js";
 
 const boidConfig = {
   maxforce: 0.03,
-  maxspeed: 30,
   desiredSeparation: 16,
   neighborDistance: 40,
   separationK: 4,
   alignmentK: 1.0,
   cohesionK: 0.6,
-  attackRange: 32,
 };
 
 export default class EnemySystem {
@@ -37,12 +35,12 @@ export default class EnemySystem {
       const idx = Math.floor(Math.random() * spawnPoints.length);
       const x = spawnPoints[idx].x;
       const y = spawnPoints[idx].y;
-      this.spawn(x, y, 1, 1);
+      this.spawn(x, y, 1);
     }
   }
 
-  spawn(x, y, type, scale) {
-    const entity = this.pool.spawn(x, y, type, scale);
+  spawn(x, y, type) {
+    const entity = this.pool.spawn(x, y, type);
     if (entity) {
       this.spatialHash.insert(entity);
     }
@@ -79,8 +77,8 @@ export default class EnemySystem {
         entity.py
       );
       entity.applyForce({
-        x: flow.x * boidConfig.maxspeed,
-        y: flow.y * boidConfig.maxspeed,
+        x: flow.x * entity.speed,
+        y: flow.y * entity.speed,
       });
 
       const nearbyWalls = BuildSystem.queryWalls(entity.px, entity.py);
@@ -88,7 +86,7 @@ export default class EnemySystem {
       const nearbyStructures = BuildSystem.queryStructures(
         entity.px,
         entity.py,
-        32
+        entity.attackRange
       );
 
       this.computeBoids(entity, nearbyEntities);
@@ -96,31 +94,76 @@ export default class EnemySystem {
 
       this.attackNearbyTowers(entity, nearbyStructures, destroy);
 
-      entity.predict(dt_fixed, boidConfig.maxspeed);
+      entity.predict(dt_fixed);
       entity.collide(nearbyWalls);
       entity.integrate(dt_fixed);
     });
   }
 
   attackNearbyTowers(entity, nearbyTowers, destroy) {
-    let closestTower = null;
-    let closestDistance = Infinity;
+    // let closestTower = null;
+    // let closestDistance = Infinity;
 
-    nearbyTowers.forEach((tower) => {
-      if (tower.type > 10 && tower.type < 22 && !destroy) return;
-      const distance = this.calculateDistance(entity, tower);
-      if (distance < closestDistance) {
-        closestDistance = distance;
-        closestTower = tower;
+    // nearbyTowers.forEach((tower) => {
+    //   if (tower.type > 10 && tower.type < 22 && !destroy) return;
+    //   const distance = this.calculateDistance(entity, tower);
+    //   if (distance < closestDistance) {
+    //     closestDistance = distance;
+    //     closestTower = tower;
+    //   }
+    // });
+
+    // if (
+    //   closestTower &&
+    //   this.isInAttackRange(entity, closestTower, closestDistance)
+    // ) {
+    //   this.attack(entity, closestTower);
+    // }
+
+    const towers = nearbyTowers.filter((t) => t.type < 10);
+    const walls = nearbyTowers.filter((t) => t.type >= 10 && t.type < 22);
+
+    let target = null;
+    let isWall = false;
+
+    if (entity.type === "mage") {
+      target = this.getClosest(entity, towers);
+      if (!target) {
+        target = this.getClosest(entity, walls);
+        isWall = true;
       }
-    });
-
-    if (
-      closestTower &&
-      this.isInAttackRange(entity, closestTower, closestDistance)
-    ) {
-      this.attack(entity, closestTower);
+    } else {
+      if (destroy) {
+        target = this.getClosest(entity, [...towers, ...walls]);
+      } else {
+        target = this.getClosest(entity, towers);
+      }
     }
+
+    if (target) {
+      const distance = this.calculateDistance(entity, target);
+
+      if (this.isInAttackRange(entity, target, distance, isWall)) {
+        this.attack(entity, target);
+      }
+    }
+  }
+
+  getClosest(entity, list) {
+    if (!list || list.length === 0) return null;
+
+    let closest = null;
+    let minDist = Infinity;
+
+    for (const obj of list) {
+      const dist = this.calculateDistance(entity, obj);
+      if (dist < minDist) {
+        minDist = dist;
+        closest = obj;
+      }
+    }
+
+    return closest;
   }
 
   calculateDistance(entity, tower) {
@@ -129,8 +172,12 @@ export default class EnemySystem {
     return dx * dx + dy * dy;
   }
 
-  isInAttackRange(entity, tower, distance) {
-    const combinedRange = boidConfig.attackRange + tower.radius;
+  isInAttackRange(entity, tower, distance, isWall) {
+    let range = entity.attackRange;
+    if (entity.type === "mage" && isWall) {
+      range = entity.meleeRange;
+    }
+    const combinedRange = range + tower.radius;
     return distance <= combinedRange * combinedRange;
   }
 
@@ -213,7 +260,7 @@ export default class EnemySystem {
 
       let mag_sq = steerX * steerX + steerY * steerY;
       if (mag_sq > 0) {
-        let invMag = boidConfig.maxspeed / Math.sqrt(mag_sq);
+        let invMag = entity.speed / Math.sqrt(mag_sq);
         steerX = (steerX * invMag - entity.vx) * boidConfig.separationK;
         steerY = (steerY * invMag - entity.vy) * boidConfig.separationK;
       }
@@ -226,7 +273,7 @@ export default class EnemySystem {
 
       let mag_sq = alignX * alignX + alignY * alignY;
       if (mag_sq > 0) {
-        let invMag = boidConfig.maxspeed / Math.sqrt(mag_sq);
+        let invMag = entity.speed / Math.sqrt(mag_sq);
         alignX = (alignX * invMag - entity.vx) * boidConfig.alignmentK;
         alignY = (alignY * invMag - entity.vy) * boidConfig.alignmentK;
       }
@@ -235,7 +282,7 @@ export default class EnemySystem {
       let dy = cohesionY - entity.py;
       mag_sq = dx * dx + dy * dy;
       if (mag_sq > 0) {
-        let invMag = boidConfig.maxspeed / Math.sqrt(mag_sq);
+        let invMag = entity.speed / Math.sqrt(mag_sq);
         cohesionX = (dx * invMag - entity.vx) * boidConfig.cohesionK;
         cohesionY = (dy * invMag - entity.vy) * boidConfig.cohesionK;
       }

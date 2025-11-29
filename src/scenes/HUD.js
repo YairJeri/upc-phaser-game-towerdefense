@@ -4,20 +4,10 @@ export class HUD extends Phaser.Scene {
   constructor() {
     super("HUD");
     this.selectedTowerButton = null;
-    this.waveNumber = 0;
   }
 
   create() {
-    this.anims.create({
-      key: "coin",
-      frames: this.anims.generateFrameNumbers("coin", {
-        start: 0,
-        end: 4,
-      }),
-      frameRate: 10,
-      repeat: -1,
-    });
-
+    this.waveNumber = 0;
     this.topLeftContainer = this.createContainer(10, 10, 340, 120, 0.7);
     this.shield = this.add.image(65, 70, "shield").setOrigin(0.5).setScale(0.4);
     this.healthText = this.add

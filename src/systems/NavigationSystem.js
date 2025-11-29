@@ -60,7 +60,6 @@ export default class NavigationSystem {
 
   addObstacle(tx, ty) {
     this.flowFieldDynamic.setWall(tx, ty);
-    console.log("adding obstacle");
     this.dynamicWorker.postMessage({
       width: this.flowFieldStatic.width,
       height: this.flowFieldStatic.height,

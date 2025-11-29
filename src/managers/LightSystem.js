@@ -79,7 +79,7 @@ export default class LightSystem {
 
     const lx = Math.floor((x * 2) / this.tileSize);
     const ly = Math.floor((y * 2) / this.tileSize);
-    console.log(lx, ly);
+
     const light = { id, lx, ly, radius, affectedTiles };
     this.lights.set(id, light);
 

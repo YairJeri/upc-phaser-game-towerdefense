@@ -1,6 +1,6 @@
 export default [
   {
-    count: 1000,
+    count: 100,
     minTimeBetweenSpawns: 100,
     maxTimeBetweenSpawns: 100,
     money: 100,

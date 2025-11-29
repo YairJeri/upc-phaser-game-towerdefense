@@ -1,3 +1,5 @@
+import Enemies from "../other/Enemies.js";
+
 export default class EntityPool {
   constructor(scene, size) {
     this.size = size;
@@ -15,20 +17,21 @@ export default class EntityPool {
         .setDepth(10);
       sprite?.anims?.pause();
 
-      const enemy = new Entity(0, 0, 0, sprite);
+      const enemy = new Entity(0, 0, 0, sprite, scene);
       enemy._poolIndex = i;
       this.pool[i] = enemy;
       this.freeIndexs.push(i);
     }
   }
 
-  spawn(x, y, type, scale) {
+  spawn(x, y, type) {
     if (this.freeIndexs.length === 0) return null;
 
     const index = this.freeIndexs.pop();
     const enemy = this.pool[index];
 
-    enemy.activate(x, y, type, scale);
+    enemy.activate(x, y, type, Enemies[type].scale);
+    enemy.setData(Enemies[type]);
 
     const activePos = this.activeIndexs.push(index) - 1;
     enemy._activePos = activePos;
@@ -73,7 +76,6 @@ export default class EntityPool {
   }
 
   clear() {
-    // Despawn all active entities
     while (this.activeIndexs.length > 0) {
       const index = this.activeIndexs[this.activeIndexs.length - 1];
       const enemy = this.pool[index];
@@ -83,7 +85,7 @@ export default class EntityPool {
 }
 
 class Entity {
-  constructor(x, y, type, sprite) {
+  constructor(x, y, type, sprite, scene) {
     this.ax = 0;
     this.ay = 0;
     this.vx = Phaser.Math.Between(-1, 1);
@@ -96,8 +98,15 @@ class Entity {
     this.isDying = false;
     this.isFlashing = false;
     this.flashDuration = 0.2;
-    this.health = 100;
     this.flashTimer = 0;
+
+    this.health = 100;
+    this.speed = 30;
+    this.attackRange = 32;
+
+    this.anims = null;
+
+    this.scene = scene;
 
     this._poolIndex = -1;
     this._activePos = -1;
@@ -123,10 +132,17 @@ class Entity {
     this.isFlashing = false;
     this.flashTimer = 0;
     this.isDying = false;
-    this.health = 100;
     this.isAttacking = false;
     this.sprite.setVisible(true).setActive(true).setScale(scale);
-    this.sprite.play("enemy_run");
+  }
+
+  setData(data) {
+    this.anims = data.anim;
+    this.speed = data.speed;
+    this.attackRange = data.attackRange;
+    this.meleeRange = data.wallAttackRange;
+    this.health = data.health;
+    this.sprite.play(this.anims.run);
   }
 
   deactivate() {
@@ -137,14 +153,14 @@ class Entity {
     if (this.isAttacking) return;
     this.isAttacking = true;
 
-    this.sprite.play("enemy_attack");
+    this.sprite.play(this.anims.attack);
     this.sprite.anims.timeScale = 1;
 
     this.sprite.once(
       Phaser.Animations.Events.ANIMATION_COMPLETE,
       (animation) => {
-        if (animation.key === "enemy_attack") {
-          this.sprite.play("enemy_run");
+        if (animation.key === this.anims.attack) {
+          this.sprite.play(this.anims.run);
           this.sprite.anims.timeScale = 1;
           this.isAttacking = false;
 
@@ -162,8 +178,9 @@ class Entity {
   death() {
     if (this.isDying) return;
     this.isDying = true;
+    this.scene.game.events.emit("MoneyGain", Math.floor(Math.random() * 5));
 
-    this.sprite.play("enemy_death");
+    this.sprite.play(this.anims.death);
     this.sprite.anims.timeScale = 1;
     this.sprite.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
       this.isDying = false;
@@ -202,7 +219,7 @@ class Entity {
     return { hit: false, closestX, closestY };
   }
 
-  predict(dt, maxSpeed) {
+  predict(dt) {
     this.flashTimer -= dt;
     if (this.flashTimer <= 0) {
       this.sprite.clearTint();
@@ -213,8 +230,8 @@ class Entity {
     this.vy += this.ay * dt * 0.5;
 
     const speed = Math.hypot(this.vx, this.vy);
-    if (speed > maxSpeed) {
-      const scale = maxSpeed / speed;
+    if (speed > this.speed) {
+      const scale = this.speed / speed;
       this.vx *= scale;
       this.vy *= scale;
     }

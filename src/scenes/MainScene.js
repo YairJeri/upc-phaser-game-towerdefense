@@ -16,7 +16,7 @@ export class MainScene extends Phaser.Scene {
     super("MainScene");
   }
 
-    init() {
+  init() {
     this.grid = [];
     this.condition = false;
     this.actualTower = null;
@@ -125,6 +125,9 @@ export class MainScene extends Phaser.Scene {
   create() {
     this.scene.launch("HUD");
     this.scene.bringToTop("HUD");
+    this.scene.launch("GameOver");
+    this.scene.bringToTop("GameOver");
+    this.scene.sleep("GameOver");
 
     this.initAnimations();
     this.initMap();
@@ -146,8 +149,12 @@ export class MainScene extends Phaser.Scene {
     });
 
     this.game.events.on("GameOver", (tower) => {
-      this.scene.start("GameOver");
-      this.scene.stop("HUD");
+      // this.scene.start("GameOver");
+      this.scene.sleep("HUD");
+      this.scene.pause("MainScene");
+      this.scene.get("GameOver").scene.restart();
+
+      // this.scene.wake("GameOver");
     });
 
     this.buildSystem.addMainStructure(12);
@@ -170,12 +177,6 @@ export class MainScene extends Phaser.Scene {
     this.flowGraphics.lineStyle(2, 0xff0000, 1);
 
     this.buildSystem.generateColliders();
-
-    // Check if we need to reset the game
-    if (this.game.registry.get("restartGame")) {
-      this.game.registry.set("restartGame", false);
-      this.resetGame();
-    }
 
     this.initInputs();
   }
@@ -266,9 +267,22 @@ export class MainScene extends Phaser.Scene {
         repeat: animation.repeat,
       });
     }
-    const enemyAnimations = ANIMATION.enemy;
-    for (const key in enemyAnimations) {
-      const animation = enemyAnimations[key];
+    const orcAnimations = ANIMATION.orc;
+    for (const key in orcAnimations) {
+      const animation = orcAnimations[key];
+      this.anims.create({
+        key: animation.key,
+        frames: this.anims.generateFrameNumbers(
+          animation.texture,
+          animation.config
+        ),
+        frameRate: animation.frameRate,
+        repeat: animation.repeat,
+      });
+    }
+    const mageAnimations = ANIMATION.mage;
+    for (const key in mageAnimations) {
+      const animation = mageAnimations[key];
       this.anims.create({
         key: animation.key,
         frames: this.anims.generateFrameNumbers(
@@ -349,31 +363,16 @@ export class MainScene extends Phaser.Scene {
 
     camera.scrollX += this.cameraVelX * dt;
     camera.scrollY += this.cameraVelY * dt;
-
-    // camera.scrollX = Phaser.Math.Clamp(
-    //   camera.scrollX,
-    //   -camera.width / (camera.zoom),
-    //   this.mapWidth * camera.zoom - camera.width
-    // );
-
-    // console.log(camera.scrollX, camera.scrollY);
-    // camera.scrollY = Phaser.Math.Clamp(
-    //   camera.scrollY,
-
-    //   -camera.height / (camera.zoom * 2),
-    //   this.mapHeight * camera.zoom - camera.height
-    // );
   }
 
   resetGame() {
-    // Reset wave system
     this.waveSystem.currentWaveIndex = 0;
     this.waveSystem.isWaveActive = false;
     this.waveSystem.spawnedEnemies = 0;
     this.waveSystem.timeSinceLastSpawn = 0;
 
     // Reset economy system
-    this.economySystem.money = 500;
+    this.economySystem.money = 1000;
     this.economySystem.updateUI();
 
     // Reset build system - clear all structures except main structure

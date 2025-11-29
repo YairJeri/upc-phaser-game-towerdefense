@@ -2,7 +2,6 @@ const NO_DIST = 0xffff;
 const DistArray = Uint16Array;
 
 onmessage = (e) => {
-  console.log("received message");
   const { width, height, cell_size, targets, walls } = e.data;
 
   const visited = new Uint8Array(width * height).fill(0);
@@ -11,7 +10,6 @@ onmessage = (e) => {
   const isValid = (row, col) =>
     row < height && col < width && visited[_index(col, row)] === 0;
 
-  console.log("generating static");
   const dists = BFS(
     targets,
     cell_size,
@@ -21,8 +19,6 @@ onmessage = (e) => {
     isValid,
     walls
   );
-
-  printFlowField(dists, width, height, _index);
 
   postMessage(dists);
 };
