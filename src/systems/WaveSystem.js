@@ -1,4 +1,4 @@
-import waves from "../other/Wave.js";
+import waves from "../data/Wave.js";
 
 export default class WaveSystem {
   constructor(scene, enemySystem, BuildSystem) {
@@ -12,6 +12,13 @@ export default class WaveSystem {
     this.edgeSpawn = [
       { x: w / 2, y: h - 32, x2: w - 32, y2: h - 32 },
       { x: w - 32, y: h - 32, x2: w - 32, y2: 32 * 16 - 32 },
+      { x: 29 * 32, y: 32, x2: 35 * 32, y2: 32 },
+      { x: 3 * 32, y: 44 * 32, x2: 3 * 32, y2: 43 * 32 },
+      { x: 5 * 32, y: 30 * 32, x2: 5 * 32, y2: 34 * 32 },
+      { x: 32, y: 46 * 32, x2: 32, y2: 60 * 32 },
+      { x: 32, y: 59 * 32, x2: 24 * 32, y2: 59 * 32 },
+      { x: 32, y: 32, x2: 32, y2: 26 * 32 },
+      { x: 32, y: 32, x2: 26 * 32, y2: 32 },
     ];
     this.currentWaveIndex = 0;
     this.isWaveActive = false;
@@ -19,6 +26,9 @@ export default class WaveSystem {
     this.timeSinceLastSpawn = 0;
     this.spawnInterval = 0;
     this.updateInterval = 0;
+
+    this.previousRemaining = 0;
+    this.currentRemaining = 0;
 
     this.buildSystem = BuildSystem;
 
@@ -46,20 +56,23 @@ export default class WaveSystem {
     this.timeSinceLastSpawn += delta;
     this.updateInterval += delta;
 
+    this.currentRemaining =
+      this.wave.count -
+      (this.spawnedEnemies - this.enemySystem.pool.getActiveCount());
+
     if (this.updateInterval >= 1) {
       this.updateInterval = 0;
     }
 
-    this.scene.game.events.emit(
-      "Remaining",
-      this.wave.count -
-        (this.spawnedEnemies - this.enemySystem.pool.getActiveCount())
-    );
+    if (this.currentRemaining !== this.previousRemaining) {
+      this.scene.game.events.emit("Remaining", this.currentRemaining);
+      this.previousRemaining = this.currentRemaining;
+    }
 
     if (this.spawnedEnemies >= this.wave.count) {
       if (this.enemySystem.pool.getActiveCount() === 0) {
+        this.scene.game.events.emit("MoneyGain", this.wave.money, false);
         this.scene.game.events.emit("WaveOver");
-        this.scene.game.events.emit("MoneyGain", this.wave.money);
         this.scene.game.events.emit("Remaining", 0);
         this.isWaveActive = false;
       }
@@ -112,8 +125,6 @@ export default class WaveSystem {
       const tx = Math.floor(spawnPoint.x / cellSize);
       const ty = Math.floor(spawnPoint.y / cellSize) - 1;
 
-      const hash = ty * w + tx;
-
       if (!this.buildSystem.wallManager.getSetWalls().has(ty * w + tx)) {
         break;
       }
@@ -122,11 +133,22 @@ export default class WaveSystem {
     } while (attempts < maxAttempts);
 
     let type = "orc";
-    if (Math.random() < 0.1) {
-      type = "mage";
-    }
+    let level = 1;
 
-    this.enemySystem.spawn(spawnPoint.x, spawnPoint.y, type);
+    const wave = this.wave;
+
+    const r = Math.random();
+
+    if (wave.number >= 4 && r < wave.mageProbability) {
+      type = "mage";
+    } else if (r < wave.strongMageProbability) {
+      type = "mage";
+      level = Phaser.Math.Between(2, wave.maxStrongLevel); // strong mage
+    } else if (r < wave.strongProbability + wave.strongMageProbability) {
+      type = "orc";
+      level = Phaser.Math.Between(2, wave.maxStrongLevel); // strong orc
+    }
+    this.enemySystem.spawn(spawnPoint.x, spawnPoint.y, type, level);
   }
 
   reset() {

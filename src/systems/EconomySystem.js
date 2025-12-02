@@ -1,5 +1,5 @@
 export default class EconomySystem {
-  constructor(scene, money = 500) {
+  constructor(scene, money = 0) {
     this.scene = scene;
     this.money = money;
 

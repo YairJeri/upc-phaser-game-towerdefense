@@ -20,6 +20,7 @@ export default class SpatialHash {
       cell = [];
       this.cells.set(key, cell);
     }
+    obj._cellIndex = cell.length;
     cell.push(obj);
 
     obj._cx = cx;
@@ -51,24 +52,34 @@ export default class SpatialHash {
   }
 
   remove(obj) {
-    if (obj._cx === undefined || obj._cy === undefined) return;
+    const cx = obj._cx;
+    const cy = obj._cy;
+    if (cx === undefined || cy === undefined) return;
 
-    const key = this._key(obj._cx, obj._cy);
+    const key = this._key(cx, cy);
     const cell = this.cells.get(key);
     if (!cell) return;
 
-    const idx = cell.indexOf(obj);
+    const idx = obj._cellIndex;
     if (idx === -1) return;
 
     const lastIdx = cell.length - 1;
+    const lastObj = cell[lastIdx];
+
     if (idx !== lastIdx) {
-      const tmp = cell[idx];
-      cell[idx] = cell[lastIdx];
-      cell[lastIdx] = tmp;
+      cell[idx] = lastObj;
+      lastObj._cellIndex = idx;
     }
+
     cell.pop();
 
-    if (cell.length === 0) this.cells.delete(key);
+    if (cell.length === 0) {
+      this.cells.delete(key);
+    }
+
+    obj._cellIndex = -1;
+    obj._cx = undefined;
+    obj._cy = undefined;
   }
 
   update(obj) {

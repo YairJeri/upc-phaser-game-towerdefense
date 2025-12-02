@@ -1,5 +1,5 @@
 import Structure from "./BaseStructure.js";
-import StructureTypes from "../other/StructureInfo.js";
+import StructureTypes from "../data/StructureInfo.js";
 
 export default class MainStructure extends Structure {
   constructor(scene, id, wx, wy, tx, ty, sprite, lightId) {
@@ -16,7 +16,7 @@ export default class MainStructure extends Structure {
     this.scene.game.events.emit("CurrentHealth", this.currentHealth);
 
     if (this.currentHealth <= 0) {
-      this.scene.game.events.emit("GameOver", this);
+      this.scene.game.events.emit("MainStructureDestroyed");
     }
   }
 }

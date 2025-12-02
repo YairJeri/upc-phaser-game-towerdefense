@@ -1,6 +1,6 @@
 export default {
   orc: {
-    health: 100,
+    health: 150,
     speed: 40,
     attackRange: 32,
     scale: 1,
@@ -13,7 +13,7 @@ export default {
   },
 
   mage: {
-    health: 400,
+    health: 80,
     speed: 30,
     attackRange: 32 * 4,
     wallAttackRange: 32 * 2,

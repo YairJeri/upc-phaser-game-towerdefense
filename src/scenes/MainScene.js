@@ -44,6 +44,11 @@ export class MainScene extends Phaser.Scene {
   base;
   grid = [];
   cell_size = 32;
+  finalStats = {
+    wave: 1,
+    money: 0,
+    enemies: 0,
+  };
 
   actualTower = null;
   initMap() {
@@ -61,15 +66,18 @@ export class MainScene extends Phaser.Scene {
     this.mountain = this.add
       .image(-412, 704, "mountain")
       .setOrigin(0, 0)
-      .setScale(4);
+      .setScale(4)
+      .setDepth(1000);
     this.mountain2 = this.add
       .image(-320, 946, "mountain")
       .setOrigin(0, 0)
-      .setScale(3);
+      .setScale(3)
+      .setDepth(1000);
     this.mountain3 = this.add
       .image(-160, 1216, "mountain")
       .setOrigin(0, 0)
-      .setScale(2);
+      .setScale(2)
+      .setDepth(1000);
 
     this.water.anims.play("flow");
   }
@@ -81,6 +89,9 @@ export class MainScene extends Phaser.Scene {
       .setOrigin(0, 0);
 
     this.debug = this.add.graphics();
+
+    this.flowDynamic = this.add.graphics();
+    this.flowStatic = this.add.graphics();
   }
 
   initManagers() {
@@ -92,7 +103,8 @@ export class MainScene extends Phaser.Scene {
     this.navigationSystem = new NavigationSystem(
       this.mapWidth,
       this.mapHeight,
-      32
+      32,
+      this
     );
     this.buildSystem = new BuildSystem(
       this,
@@ -103,23 +115,71 @@ export class MainScene extends Phaser.Scene {
     );
     this.proyectilePool = new ProjectilePool(this, 1000);
     this.waveSystem = new WaveSystem(this, this.enemySystem, this.buildSystem);
-    this.economySystem = new EconomySystem(this, 500);
+    this.economySystem = new EconomySystem(this, 0);
     this.soundSystem = new SoundSystem(this);
   }
 
   initEmitters() {
-    this.explosionEmitter = this.add.particles(0, 0, "flares", {
-      frame: "white",
-      color: [0xfacc22, 0xf89800, 0xf83600, 0x9f0404],
-      colorEase: "quad.out",
-      lifespan: 1000,
-      rotate: { min: 0, max: 360 },
-      alpha: { start: 1, end: 0 },
-      scale: { start: 0.7, end: 0, ease: "sine.out" },
-      speed: 100,
-      advance: 2000,
-      blendMode: "ADD",
-    });
+    this.explosionEmitter = this.add
+      .particles(0, 0, "flares", {
+        frame: "white",
+        color: [0xff0404, 0xf83600, 0xf89800, 0xfacc22],
+        colorEase: "quad.out",
+        lifespan: 1000,
+        rotate: { min: 0, max: 360 },
+        alpha: { start: 1, end: 0 },
+        scale: { start: 0.7, end: 0, ease: "sine.out" },
+        speed: 100,
+        advance: 2000,
+        blendMode: "ADD",
+      })
+      .setDepth(1000);
+
+    this.debrisEmitter = this.add
+      .particles(0, 0, "particle", {
+        color: [0x8c8c8c, 0x6e6e6e, 0x4f4f4f, 0xc2b280],
+        colorEase: "quad.out",
+        lifespan: 800,
+        rotate: { min: 0, max: 360 },
+        alpha: { start: 1, end: 0 },
+        scale: { start: 0.5, end: 0.3, ease: "sine.out" },
+        gravityY: 200,
+        speed: 60,
+        advance: 2000,
+      })
+      .setDepth(1000);
+
+    this.bloodAngleMin = -100;
+    this.bloodAngleMax = -80;
+    this.bloodEmitter = this.add
+      .particles(0, 0, "particle", {
+        colorEase: "quad.out",
+        color: [0xff0000, 0x8b0000, 0x400000],
+        alpha: { start: 1, end: 0 },
+        scale: { start: 0.5, end: 0, ease: "sine.in" },
+        speed: 100,
+        advance: 1500,
+        lifespan: 500,
+        angle: {
+          onEmit: () => {
+            return Phaser.Math.Between(this.bloodAngleMin, this.bloodAngleMax);
+          },
+        },
+      })
+      .setDepth(1000);
+
+    this.mageAttackEmitter = this.add
+      .particles(0, 0, "flares", {
+        color: [0xff0000, 0xd10000, 0x8b0000, 0x660000],
+        colorEase: "quad.out",
+        lifespan: 300,
+        rotate: { min: 0, max: 360 },
+        alpha: { start: 1, end: 0 },
+        scale: { start: 0.2, end: 0.1, ease: "sine.out" },
+        speed: -30,
+        advance: 1500,
+      })
+      .setDepth(1000);
   }
 
   create() {
@@ -140,24 +200,43 @@ export class MainScene extends Phaser.Scene {
 
     this.economySystem.addMoney(500);
 
-    // Remove old listeners to prevent duplicates on restart
-    this.game.events.off("TowerChange");
-    this.game.events.off("GameOver");
-
     this.game.events.on("TowerChange", (tower) => {
       this.actualTower = tower;
     });
 
     this.game.events.on("GameOver", (tower) => {
-      // this.scene.start("GameOver");
-      this.scene.sleep("HUD");
+      this.soundSystem.stop();
       this.scene.pause("MainScene");
-      this.scene.get("GameOver").scene.restart();
-
-      // this.scene.wake("GameOver");
     });
 
-    this.buildSystem.addMainStructure(12);
+    this.game.events.on("Restart", () => {
+      this.resetGame();
+      this.scene.resume("MainScene");
+    });
+
+    this.game.events.on("EKilled", () => {
+      this.finalStats.enemies += 1;
+    });
+
+    this.game.events.on("VillageDestroyed", ([tx, ty]) => {
+      this.navigationSystem.removeTarget(tx, ty);
+    });
+
+    this.game.events.on("MainStructureDestroyed", () => {
+      this.finalStats.wave = this.waveSystem.currentWaveIndex;
+      this.finalStats.money = this.economySystem.money;
+      this.game.events.emit("GameOver", this.finalStats);
+    });
+
+    this.game.events.on("StartWave", () => {
+      this.soundSystem.playHorn(0.5);
+    });
+
+    this.game.events.on("WaveOver", () => {
+      this.soundSystem.playTrumpet(0.5);
+    });
+
+    this.buildSystem.addMainStructure(16);
 
     const targets = [
       (this.mapWidth - 16) / 2,
@@ -176,13 +255,36 @@ export class MainScene extends Phaser.Scene {
 
     this.flowGraphics.lineStyle(2, 0xff0000, 1);
 
-    this.buildSystem.generateColliders();
-
     this.initInputs();
+
+    this.soundSystem.playGameMusic(0.25);
+    this.addInitialVillages();
+    this.addBridge();
+    this.buildSystem.generateColliders();
   }
+
+  addBridge() {
+    const bridge = [
+      20, 24, 21, 24, 21, 23, 21, 22, 22, 22, 22, 21, 23, 21, 23, 20, 23, 19,
+      20, 25, 19, 25,
+    ];
+    for (let i = 0; i < bridge.length; i += 2) {
+      this.buildSystem.removeMapWall(bridge[i], bridge[i + 1]);
+      this.navigationSystem.removeMapWall(bridge[i], bridge[i + 1]);
+      const sprite = this.add
+        .sprite(
+          bridge[i] * this.cell_size + this.cell_size / 2,
+          bridge[i + 1] * this.cell_size + this.cell_size / 2,
+          "buildings"
+        )
+        .setOrigin(0.5)
+        .setScale(2.5);
+      sprite.setFrame(10);
+    }
+  }
+
   condition = false;
   initInputs() {
-    // Remove old input listeners to prevent duplicates on restart
     this.input.off("pointermove");
     this.input.off("pointerup");
 
@@ -190,9 +292,6 @@ export class MainScene extends Phaser.Scene {
       Phaser.Input.Keyboard.KeyCodes.SPACE
     );
 
-    // this.debug.clear();
-    // this.debug.lineStyle(10, 0xff0000, 1);
-    // this.drawWalls();
     this.space.on("down", () => {});
 
     this.input.on("pointermove", (pointer) => {
@@ -236,8 +335,6 @@ export class MainScene extends Phaser.Scene {
           );
         }
       }
-
-      // this.navigationSystem.flowFieldDynamic.drawFlowField(this.debug);
     });
   }
 
@@ -304,19 +401,27 @@ export class MainScene extends Phaser.Scene {
     this.cameraSpeed = 800;
     this.dampingFactor = 0.99;
     this.cameraSpeedFactor = 0;
-
     this.cameraVelX = 0;
     this.cameraVelY = 0;
 
-    const desiredZoomFactor = 3;
-    const zoomX = cam.width / (this.mapWidth / desiredZoomFactor);
-    const zoomY = cam.height / (this.mapHeight / desiredZoomFactor);
+    this.minZoom = Math.max(
+      cam.width / this.mapWidth,
+      cam.height / this.mapHeight
+    );
 
-    const zoom = Math.min(zoomX, zoomY);
+    this.maxZoom = 5;
 
-    cam.setZoom(zoom);
+    let initialZoom = 0.7;
+    initialZoom = Phaser.Math.Clamp(initialZoom, this.minZoom, this.maxZoom);
+    cam.setZoom(initialZoom);
 
     cam.centerOn(this.mapWidth / 2, this.mapHeight / 2);
+
+    this.input.on("wheel", (pointer, objs, dx, dy) => {
+      let newZoom = cam.zoom - dy * 0.001;
+      newZoom = Phaser.Math.Clamp(newZoom, this.minZoom, this.maxZoom);
+      cam.setZoom(newZoom);
+    });
   }
 
   handleCameraMovement(pointer) {
@@ -365,6 +470,26 @@ export class MainScene extends Phaser.Scene {
     camera.scrollY += this.cameraVelY * dt;
   }
 
+  addInitialVillages() {
+    const villages = [
+      // --- CLUSTER ESTE (zona agrícola con varias aldeas)
+      43, 18, 44, 20, 46, 21, 44, 23, 47, 24,
+
+      // --- CLUSTER SUR (pueblos costeros / desorganizados)
+      28, 46, 30, 47, 33, 50, 27, 50, 33, 48, 29, 52,
+
+      // --- CLUSTER OESTE (zona montañosa)
+      23, 26, 26, 24, 26, 27,
+
+      // --- MICROALDEAS / PUEBLOS SUELTOS
+      35, 27, 39, 30, 28, 26, 30, 38, 49, 29, 37, 47,
+    ];
+
+    for (let i = 0; i < villages.length; i += 2) {
+      this.buildSystem.addVillage(villages[i], villages[i + 1]);
+    }
+  }
+
   resetGame() {
     this.waveSystem.currentWaveIndex = 0;
     this.waveSystem.isWaveActive = false;
@@ -372,7 +497,7 @@ export class MainScene extends Phaser.Scene {
     this.waveSystem.timeSinceLastSpawn = 0;
 
     // Reset economy system
-    this.economySystem.money = 1000;
+    this.economySystem.money = 500;
     this.economySystem.updateUI();
 
     // Reset build system - clear all structures except main structure
@@ -394,6 +519,7 @@ export class MainScene extends Phaser.Scene {
 
     // Re-add main structure
     this.buildSystem.addMainStructure(12);
+    this.addInitialVillages();
 
     // Regenerate navigation
     const targets = [
@@ -408,6 +534,8 @@ export class MainScene extends Phaser.Scene {
     ];
     this.navigationSystem.generateStatic(targets, this.buildSystem);
     this.buildSystem.generateColliders();
+
+    this.soundSystem.playGameMusic(0.25);
   }
 
   update(time, dt_ms) {
@@ -415,9 +543,7 @@ export class MainScene extends Phaser.Scene {
     this.updateCamera(dt);
     this.cloudManager.update(dt);
     this.buildSystem.update(dt, this.enemySystem, this.proyectilePool);
-    this.condition =
-      this.buildSystem.canPlace(this.actTileX, this.actTileY) &&
-      !this.waveSystem.isWaveActive;
+    this.condition = this.buildSystem.canPlace(this.actTileX, this.actTileY);
     this.enemySystem.update(dt, this.navigationSystem, this.buildSystem);
     this.proyectilePool.update(dt, this.enemySystem, this);
     this.waveSystem.update(dt);

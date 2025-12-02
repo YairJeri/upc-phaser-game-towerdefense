@@ -39,8 +39,8 @@ export default class EnemySystem {
     }
   }
 
-  spawn(x, y, type) {
-    const entity = this.pool.spawn(x, y, type);
+  spawn(x, y, type, level) {
+    const entity = this.pool.spawn(x, y, type, level);
     if (entity) {
       this.spatialHash.insert(entity);
     }
@@ -53,19 +53,14 @@ export default class EnemySystem {
 
   update(dt, NavigationSystem, BuildSystem) {
     this.pool.forEachActive((entity) => {
-      if (entity.health <= 0 && !entity.isDying) {
-        this.despawn(entity);
-        return;
-      }
-      this.spatialHash.update(entity);
-    });
-
-    this.pool.forEachActive((entity) => {
-      if (entity.isAttacking) return;
       if (entity.isDying) {
         this.spatialHash.remove(entity);
         return;
+      } else if (entity.isDead) {
+        this.despawn(entity);
+        return;
       }
+      if (entity.isAttacking) return;
 
       const nearbyEntities = this.spatialHash.query(
         entity.px,
@@ -97,29 +92,12 @@ export default class EnemySystem {
       entity.predict(dt_fixed);
       entity.collide(nearbyWalls);
       entity.integrate(dt_fixed);
+
+      this.spatialHash.update(entity);
     });
   }
 
   attackNearbyTowers(entity, nearbyTowers, destroy) {
-    // let closestTower = null;
-    // let closestDistance = Infinity;
-
-    // nearbyTowers.forEach((tower) => {
-    //   if (tower.type > 10 && tower.type < 22 && !destroy) return;
-    //   const distance = this.calculateDistance(entity, tower);
-    //   if (distance < closestDistance) {
-    //     closestDistance = distance;
-    //     closestTower = tower;
-    //   }
-    // });
-
-    // if (
-    //   closestTower &&
-    //   this.isInAttackRange(entity, closestTower, closestDistance)
-    // ) {
-    //   this.attack(entity, closestTower);
-    // }
-
     const towers = nearbyTowers.filter((t) => t.type < 10);
     const walls = nearbyTowers.filter((t) => t.type >= 10 && t.type < 22);
 
@@ -215,9 +193,7 @@ export default class EnemySystem {
   }
 
   reset() {
-    // Clear all active enemies from the pool
     this.pool.clear();
-    // Clear the spatial hash
     this.spatialHash.clear();
   }
 
@@ -236,21 +212,29 @@ export default class EnemySystem {
       let dx = entity.px - boid.px;
       let dy = entity.py - boid.py;
       let distSq = dx * dx + dy * dy;
+      if (distSq <= 0) continue;
 
-      if (distSq > 0) {
-        if (distSq < this.neighDistSq) {
-          alignX += boid.vx;
-          alignY += boid.vy;
-          cohesionX += boid.px;
-          cohesionY += boid.py;
-          countN++;
-        }
-        if (distSq < this.desSepSq) {
-          let factor = (this.desSepSq - distSq) / this.desSepSq;
-          steerX += dx * factor;
-          steerY += dy * factor;
-          countS++;
-        }
+      const sepDist =
+        boidConfig.desiredSeparation * (entity.size + boid.size) * 0.5;
+      const neighDist =
+        boidConfig.neighborDistance * Math.max(entity.size, boid.size);
+
+      const sepDistSq = sepDist * sepDist;
+      const neighDistSq = neighDist * neighDist;
+
+      if (distSq < neighDistSq) {
+        alignX += boid.vx;
+        alignY += boid.vy;
+        cohesionX += boid.px;
+        cohesionY += boid.py;
+        countN++;
+      }
+
+      if (distSq < sepDistSq) {
+        let factor = (sepDistSq - distSq) / sepDistSq;
+        steerX += dx * factor;
+        steerY += dy * factor;
+        countS++;
       }
     }
 

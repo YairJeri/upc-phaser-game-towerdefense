@@ -100,7 +100,6 @@ export default class LightSystem {
   }
 
   reset() {
-    // Clear all lights
     this.lights.clear();
     this.grid.clear();
     this.nextLightId = 1;

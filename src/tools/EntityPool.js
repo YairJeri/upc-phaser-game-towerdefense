@@ -1,4 +1,5 @@
-import Enemies from "../other/Enemies.js";
+import Enemies from "../data/Enemies.js";
+import StructureTypes from "../data/StructureInfo.js";
 
 export default class EntityPool {
   constructor(scene, size) {
@@ -24,14 +25,14 @@ export default class EntityPool {
     }
   }
 
-  spawn(x, y, type) {
+  spawn(x, y, type, level = 1) {
     if (this.freeIndexs.length === 0) return null;
 
     const index = this.freeIndexs.pop();
     const enemy = this.pool[index];
 
-    enemy.activate(x, y, type, Enemies[type].scale);
-    enemy.setData(Enemies[type]);
+    enemy.activate(x, y, type);
+    enemy.setData(Enemies[type], level);
 
     const activePos = this.activeIndexs.push(index) - 1;
     enemy._activePos = activePos;
@@ -95,10 +96,13 @@ class Entity {
     this.type = type;
     this.sprite = sprite;
     this.isAttacking = false;
+    this.size = 1;
     this.isDying = false;
+    this.isDead = false;
     this.isFlashing = false;
     this.flashDuration = 0.2;
     this.flashTimer = 0;
+    this.damage = 0;
 
     this.health = 100;
     this.speed = 30;
@@ -110,38 +114,74 @@ class Entity {
 
     this._poolIndex = -1;
     this._activePos = -1;
+    this._cellIndex = -1;
   }
 
   takeDamage(damage) {
-    if (this.isDying) return;
+    if (this.isDying || this.isDead) return;
     this.health -= damage;
 
     if (this.health <= 0) {
       this.death();
+      this.scene.game.events.emit("EKilled");
     }
-    if (!this.isFlashing) {
-      this.sprite.setTint(0xff0000);
-      this.isFlashing = true;
-      this.flashTimer = this.flashDuration;
-    }
+    this.sprite.setTint(0xff0000);
+    this.isFlashing = true;
+    this.flashTimer = this.flashDuration;
   }
 
-  activate(x, y, type, scale) {
+  activate(x, y, type) {
     (this.px = x), (this.py = y), (this.type = type);
     this.sprite.setPosition(x, y);
     this.isFlashing = false;
     this.flashTimer = 0;
     this.isDying = false;
+    this.isDead = false;
     this.isAttacking = false;
-    this.sprite.setVisible(true).setActive(true).setScale(scale);
+    this.sprite.setVisible(true).setActive(true);
   }
 
-  setData(data) {
+  getTintForLevel(level) {
+    if (level <= 1) return null;
+
+    switch (level) {
+      case 2:
+        return 0x3399ff;
+      case 3:
+        return 0x33ff33;
+      case 4:
+        return 0xffff33;
+      case 5:
+        return 0xff9933;
+      default:
+        return 0xcc33ff;
+    }
+  }
+
+  setData(data, level) {
+    this.level = level;
+
+    const sizeScale = 1 + (level - 1) * 0.3;
+    const healthMult = 1 + (level - 1) * 0.6;
+    const damageMult = 1 + (level - 1) * 0.4;
+    const speedMult = 1 - (level - 1) * 0.07;
+
     this.anims = data.anim;
-    this.speed = data.speed;
-    this.attackRange = data.attackRange;
-    this.meleeRange = data.wallAttackRange;
-    this.health = data.health;
+    this.speed = data.speed * speedMult;
+    this.attackRange = data.attackRange * sizeScale;
+    this.meleeRange = data.wallAttackRange * sizeScale;
+
+    this.health = data.health * healthMult;
+
+    this.size = sizeScale;
+
+    this.sprite.setScale(data.scale * sizeScale);
+    const tint = this.getTintForLevel(level);
+    this.baseTint = tint;
+
+    if (tint !== null) this.sprite.setTint(tint);
+    else this.sprite.clearTint();
+
     this.sprite.play(this.anims.run);
   }
 
@@ -168,6 +208,22 @@ class Entity {
             structure.setCurrentHealth(structure.currentHealth - 1);
             if (structure.currentHealth <= 0) {
               structure.isDestroyed = true;
+              if (structure.type === StructureTypes.Village.id) {
+                this.scene.game.events.emit("VillageDestroyed", [
+                  structure.tx,
+                  structure.ty,
+                ]);
+              }
+            } else {
+              if (this.type === "mage") {
+                this.scene.mageAttackEmitter.explode(
+                  6,
+                  structure.px,
+                  structure.py
+                );
+              }
+              this.scene.debrisEmitter.explode(4, structure.px, structure.py);
+              this.scene.soundSystem.playDamageBuilding(0.05);
             }
           }
         }
@@ -176,14 +232,22 @@ class Entity {
   }
 
   death() {
-    if (this.isDying) return;
+    if (this.isDying || this.isDead) return;
     this.isDying = true;
-    this.scene.game.events.emit("MoneyGain", Math.floor(Math.random() * 5));
+    this.scene.game.events.emit(
+      "MoneyGain",
+      Math.floor(Math.random() * 5),
+      false
+    );
 
+    if (this.type !== "mage") {
+      this.scene.soundSystem.playOrcDeath(0.05);
+    }
     this.sprite.play(this.anims.death);
     this.sprite.anims.timeScale = 1;
     this.sprite.once(Phaser.Animations.Events.ANIMATION_COMPLETE, () => {
       this.isDying = false;
+      this.isDead = true;
     });
   }
 
@@ -220,10 +284,14 @@ class Entity {
   }
 
   predict(dt) {
-    this.flashTimer -= dt;
-    if (this.flashTimer <= 0) {
-      this.sprite.clearTint();
-      this.isFlashing = false;
+    if (this.isFlashing) {
+      this.flashTimer -= dt;
+      if (this.flashTimer <= 0) {
+        if (this.baseTint !== null) this.sprite.setTint(this.baseTint);
+        else this.sprite.clearTint();
+
+        this.isFlashing = false;
+      }
     }
 
     this.vx += this.ax * dt * 0.5;
