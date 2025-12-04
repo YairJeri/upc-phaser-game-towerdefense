@@ -205,7 +205,7 @@ export class MainScene extends Phaser.Scene {
       this.isGamePaused = paused;
     });
 
-    this.economySystem.addMoney(500);
+    this.economySystem.addMoney(200);
 
     this.game.events.on("TowerChange", (tower) => {
       this.actualTower = tower;
@@ -524,17 +524,11 @@ export class MainScene extends Phaser.Scene {
 
   addInitialVillages() {
     const villages = [
-      // --- CLUSTER ESTE (zona agrícola con varias aldeas)
-      43, 18, 44, 20, 46, 21, 44, 23, 47, 24,
+      30, 47, 33, 50, 27, 50, 33, 48, 29, 52,
 
-      // --- CLUSTER SUR (pueblos costeros / desorganizados)
-      28, 46, 30, 47, 33, 50, 27, 50, 33, 48, 29, 52,
+      52, 33, 50, 34, 56, 35, 53, 37, 48, 36,
 
-      // --- CLUSTER OESTE (zona montañosa)
-      23, 26, 26, 24, 26, 27,
-
-      // --- MICROALDEAS / PUEBLOS SUELTOS
-      35, 27, 39, 30, 28, 26, 30, 38, 49, 29, 37, 47,
+      23, 26, 26, 24, 26, 27, 28, 26, 30, 15
     ];
 
     for (let i = 0; i < villages.length; i += 2) {
@@ -549,7 +543,7 @@ export class MainScene extends Phaser.Scene {
     this.waveSystem.timeSinceLastSpawn = 0;
 
     // Reset economy system
-    this.economySystem.money = 500;
+    this.economySystem.money = 200;
     this.economySystem.updateUI();
 
     // Reset build system - clear all structures except main structure
@@ -565,12 +559,9 @@ export class MainScene extends Phaser.Scene {
     this.actualTower = null;
 
     // Reset game registry values
-    this.game.registry.set("finalWave", 1);
-    this.game.registry.set("finalMoney", 0);
-    this.game.registry.set("finalEnemies", 0);
 
     // Re-add main structure
-    this.buildSystem.addMainStructure(12);
+    this.buildSystem.addMainStructure(16);
     this.addInitialVillages();
 
     // Regenerate navigation

@@ -102,7 +102,7 @@ class Entity {
     this.isFlashing = false;
     this.flashDuration = 0.2;
     this.flashTimer = 0;
-    this.damage = 0;
+    this.damage = 1;
 
     this.health = 100;
     this.speed = 30;
@@ -166,6 +166,8 @@ class Entity {
     const damageMult = 1 + (level - 1) * 0.4;
     const speedMult = 1 - (level - 1) * 0.07;
 
+    this.damage = damageMult;
+
     this.anims = data.anim;
     this.speed = data.speed * speedMult;
     this.attackRange = data.attackRange * sizeScale;
@@ -186,6 +188,18 @@ class Entity {
   }
 
   deactivate() {
+    this.sprite.anims.stop();
+
+    this.sprite.removeAllListeners(Phaser.Animations.Events.ANIMATION_COMPLETE);
+
+    if (this.attackTimer) {
+      this.attackTimer.remove();
+      this.attackTimer = null;
+    }
+
+    this.isAttacking = false;
+    this.currentTarget = null;
+
     this.sprite.setVisible(false).setActive(false);
   }
 
@@ -205,7 +219,7 @@ class Entity {
           this.isAttacking = false;
 
           if (structure) {
-            structure.setCurrentHealth(structure.currentHealth - 1);
+            structure.setCurrentHealth(structure.currentHealth - this.damage);
             if (structure.currentHealth <= 0) {
               structure.isDestroyed = true;
               if (structure.type === StructureTypes.Village.id) {

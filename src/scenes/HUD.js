@@ -43,10 +43,11 @@ export class HUD extends Phaser.Scene {
     this.game.events.on("WaveOver", () => {
       this.waveTextContainer.show();
       this.waveMoneyText.setText(
-        `Income: $${this.waveMoneyGenerated}  Wave Bonus:$${
+        `Income: $${this.waveMoneyGenerated}  Wave Bonus:$ ${
           waves[this.waveNumber - 1].money
         }`
       );
+      this.waveMoneyGenerated = 0;
 
       this.time.delayedCall(3000, () => {
         this.waveTextContainer.hide();
@@ -57,8 +58,21 @@ export class HUD extends Phaser.Scene {
     });
 
     // Show alert when wave starts
-    this.game.events.on("StartWave", () => {
-      this.showWaveIncomingAlert();
+    // this.game.events.on("StartWave", () => {
+    //   this.showWaveIncomingAlert();
+    // });
+    
+    this.game.events.on("CurrentHealth", (current) => {
+      this.healthText.setText(
+        `Health: ${current}/${StructureTypes.Main.health}`
+      );
+      this.updateHealthBar(current / StructureTypes.Main.health, 0, 0);
+    });
+    this.game.events.on("Restart", () => {
+      this.scene.restart();
+    });
+    this.game.events.on("GameOver", () => {
+      this.scene.sleep();
     });
 
     // Listen for pause toggles to show/hide overlay and disable interactions
@@ -140,7 +154,7 @@ export class HUD extends Phaser.Scene {
     this.topLeftContainer.addElement(this.coin, 100, 80);
 
     this.moneyText = this.add
-      .bitmapText(0, 0, "minogram", "$500", 20)
+      .bitmapText(0, 0, "minogram", "$200", 20)
       .setTint(0xffd700);
     this.topLeftContainer.addElement(this.moneyText, 120, 72);
 

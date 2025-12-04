@@ -70,11 +70,10 @@ export class StartMenu extends Phaser.Scene {
     // Stop menu music before starting game
     this.menuMusic?.stop();
     this.scene.start("MainScene");
-    this.scene.launch("HUD");
-    this.scene.bringToTop("HUD");
   }
 
   scaleBackground(bg) {
+    if(this.cameras.main == undefined) return;
     const { width, height } = this.cameras.main;
     const texWidth = bg.texture.getSourceImage().width;
     const texHeight = bg.texture.getSourceImage().height;
