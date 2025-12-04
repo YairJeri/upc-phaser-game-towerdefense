@@ -30,6 +30,10 @@ export default class UIButton {
       textColor: 0xffffff,
       fontSize: 20,
       fontKey: "minogram",
+      shadowColor: 0x000000,
+      shadowAlpha: 0.35,
+      shadowOffsetX: 4,
+      shadowOffsetY: 4,
     };
 
     this.style = { ...this.defaultStyle, ...style };
@@ -43,6 +47,10 @@ export default class UIButton {
   }
 
   createButton() {
+    // Optional shadow behind button
+    this.shadow = this.scene.add.graphics().setDepth(9000);
+    this.setShadowStyle();
+
     this.bg = this.scene.add.graphics().setDepth(9001);
     this.setButtonStyle(this.style.backgroundColor, this.style.borderColor);
 
@@ -70,6 +78,20 @@ export default class UIButton {
     });
   }
 
+  setShadowStyle() {
+    this.shadow.clear();
+    if (this.style.shadowAlpha > 0) {
+      this.shadow.fillStyle(this.style.shadowColor, this.style.shadowAlpha);
+      this.shadow.fillRoundedRect(
+        this.x + this.style.shadowOffsetX,
+        this.y + this.style.shadowOffsetY,
+        this.width,
+        this.height,
+        12
+      );
+    }
+  }
+
   setButtonStyle(bgColor, borderColor) {
     this.bg.clear();
     this.bg.fillStyle(bgColor, 0.85);
@@ -81,6 +103,7 @@ export default class UIButton {
   setActive() {
     this.isActive = true;
     this.setButtonStyle(this.style.backgroundColor, this.style.borderColor);
+    this.setShadowStyle();
   }
 
   setInactive() {
@@ -89,15 +112,18 @@ export default class UIButton {
       this.style.inactiveColor,
       this.style.inactiveBorderColor
     );
+    this.setShadowStyle();
   }
 
   onHover() {
     if (!this.isActive) return;
     this.setButtonStyle(this.style.hoverColor, this.style.hoverBorderColor);
+    this.setShadowStyle();
   }
 
   onOut() {
     if (!this.isActive) return;
     this.setButtonStyle(this.style.backgroundColor, this.style.borderColor);
+    this.setShadowStyle();
   }
 }
