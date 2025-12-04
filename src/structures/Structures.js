@@ -2,7 +2,7 @@ import MainStructure from "./MainStructure.js";
 import WallStructure from "./WallStructure.js";
 import SingleTargetTower from "./SingleTargetTower.js";
 import AreaDamageTower from "./AreaDamageTower.js";
-import FarmStructure from "./FarmStructure.js";
+import VillageStructure from "./VillageStructure.js";
 
 export default class StructureFactory {
   static createMain(scene, id, wx, wy, tx, ty, sprite, lightId) {
@@ -17,7 +17,7 @@ export default class StructureFactory {
   static createTower2(scene, id, wx, wy, tx, ty, sprite, lightId) {
     return new AreaDamageTower(scene, id, wx, wy, tx, ty, sprite, lightId);
   }
-  static createFarm(scene, id, wx, wy, tx, ty, sprite, lightId) {
-    return new FarmStructure(scene, id, wx, wy, tx, ty, sprite, lightId);
+  static createVillage(scene, id, wx, wy, tx, ty, sprite, lightId) {
+    return new VillageStructure(scene, id, wx, wy, tx, ty, sprite, lightId);
   }
 }

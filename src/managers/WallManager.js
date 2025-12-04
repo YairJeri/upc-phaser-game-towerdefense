@@ -1,4 +1,4 @@
-import { walls } from "../other/walls.js";
+import { walls } from "../data/walls.js";
 
 export default class WallManager {
   constructor(width, height, tileSize = 32) {

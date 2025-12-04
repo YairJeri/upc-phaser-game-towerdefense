@@ -1,5 +1,5 @@
 import Structure from "./BaseStructure.js";
-import StructureTypes from "../other/StructureInfo.js";
+import StructureTypes from "../data/StructureInfo.js";
 
 export default class WallStructure extends Structure {
   constructor(scene, id, wx, wy, tx, ty, sprite) {

@@ -64,13 +64,11 @@ export default class ProjectilePool {
   }
 
   reset() {
-    // Deactivate all active projectiles
     for (let i = 0; i < this.activeIndexes.length; i++) {
       const projectile = this.pool[this.activeIndexes[i]];
       projectile.deactivate();
     }
 
-    // Reset pool state
     this.freeIndexes = [];
     this.activeIndexes = [];
 
@@ -118,10 +116,6 @@ class Projectile {
 
     const dx = target.px - x;
     const dy = target.py - y;
-    const dist = Math.hypot(dx, dy);
-    this.vx = (dx / dist) * this.speed;
-    this.vy = (dy / dist) * this.speed;
-    this.sprite.setPosition(x, y).setVisible(true).setActive(true);
 
     if (this.isAreaDamage) {
       this.sprite.setAngle(0);
@@ -131,7 +125,12 @@ class Projectile {
       this.sprite.setAngle((Math.atan2(dy, dx) * 180) / Math.PI + 90);
       this.sprite.setScale(1);
       this.sprite.setFrame(24);
+      this.speed = 800;
     }
+    const dist = Math.hypot(dx, dy);
+    this.vx = (dx / dist) * this.speed;
+    this.vy = (dy / dist) * this.speed;
+    this.sprite.setPosition(x, y).setVisible(true).setActive(true);
 
     this.isActive = true;
   }
@@ -168,11 +167,17 @@ class Projectile {
       if (distSq < hitRadius * hitRadius) {
         if (this.isAreaDamage) {
           this.applyAreaDamage(enemySystem);
-          scene.soundSystem.playEffect(0.05);
+          scene.soundSystem.playExplosion(0.05);
           this.deactivate();
           scene.explosionEmitter.explode(20, this.px, this.py);
         } else {
           enemy.takeDamage(this.damage);
+          scene.soundSystem.playHit(0.01);
+          const angle = Math.atan2(this.vy, this.vx);
+          const angleDegrees = Phaser.Math.RadToDeg(angle);
+          scene.bloodAngleMax = angleDegrees + 30;
+          scene.bloodAngleMin = angleDegrees - 30;
+          scene.bloodEmitter.emitParticleAt(this.px, this.py, 10);
           this.deactivate();
         }
       }

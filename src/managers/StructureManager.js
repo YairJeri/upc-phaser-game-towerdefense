@@ -1,4 +1,4 @@
-import StructureTypes from "../other/StructureInfo.js";
+import StructureTypes from "../data/StructureInfo.js";
 import StructureFactory from "../structures/Structures.js";
 
 export default class StructureManager {
@@ -58,7 +58,7 @@ export default class StructureManager {
 
     const sprite = this.scene.add.sprite(worldX, worldY, "buildings", type);
     sprite.setOrigin(0.5);
-    sprite.setScale(2);
+    sprite.setScale(2).setDepth(0);
 
     let structure;
 
@@ -95,7 +95,7 @@ export default class StructureManager {
     return structure;
   }
 
-  addFarm(tx, ty, lightId) {
+  addVillage(tx, ty, lightId) {
     const id = this.nextId++;
 
     const worldX = tx * this.tileSize + this.tileSize / 2;
@@ -107,9 +107,9 @@ export default class StructureManager {
       Math.floor(Math.random() * 4)
     );
     sprite.setOrigin(0.5);
-    sprite.setScale(2);
+    sprite.setScale(2).setDepth(0);
 
-    const structure = StructureFactory.createFarm(
+    const structure = StructureFactory.createVillage(
       this.scene,
       id,
       worldX,
@@ -218,8 +218,6 @@ export default class StructureManager {
     const s = this.structures.get(id);
     if (!s) return;
 
-    s.destroy();
-
     this.byTile.delete(this.hash(s.tx, s.ty));
     this.structures.delete(id);
 
@@ -227,6 +225,7 @@ export default class StructureManager {
       const { frame, neighbors } = this.checkWall(s.tx, s.ty, true);
       this.updateNeighborFrames(neighbors);
     }
+    s.destroy();
   }
 
   getStructureAt(tx, ty) {

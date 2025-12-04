@@ -2,67 +2,97 @@ export default class SoundSystem {
   constructor(scene) {
     this.scene = scene;
 
-    this.poolEffects = new SoundPool(scene, "explosion", 20);
-    // this.poolDisparo = new SoundPool(scene, "disparo", 30);
-    // this.poolAmbiente = new SoundPool(scene, "ambiente", 5);
-    // this.poolMusica = new SoundPool(scene, "musica_fondo", 1);
+    this.poolEffects = new SoundPool(scene, "explosion", 5);
+    this.hitEffects = new SoundPool(scene, "hit", 5);
+    this.arrowEffects = new SoundPool(scene, "arrow", 5);
+    this.orcDeathEffects = new SoundPool(scene, "orc_death", 5);
+    this.damageBuildingEffects = new SoundPool(scene, "damage_building", 5);
+
+    this.gameMusic = this.scene.sound.add("game_music");
+    this.trumpet = this.scene.sound.add("trumpet");
+    this.horn = this.scene.sound.add("horn");
   }
 
-  loadSounds() {
-    // Cargar los sonidos necesarios para la escena
-    // this.scene.load.audio("explosion", "assets/sounds/explosion.mp3");
-    // this.scene.load.audio("disparo", "assets/sounds/disparo.mp3");
-    // this.scene.load.audio("ambiente", "assets/sounds/ambiente.mp3");
-    // this.scene.load.audio("musica_fondo", "assets/sounds/musica_fondo.mp3");
-  }
-
-  preload() {
-    this.loadSounds();
-  }
-
-  playEffect(vol) {
+  playExplosion(vol) {
     let sound = this.poolEffects.get();
+    if (!sound) return;
     sound.setVolume(vol);
     sound.rate = Phaser.Math.FloatBetween(0.8, 1.2);
     sound.play();
   }
 
-  //   playDisparo() {
-  //     let sound = this.poolDisparo.get();
-  //     sound.setVolume(1);
-  //     sound.play();
-  //   }
+  playArrow(vol) {
+    let sound = this.arrowEffects.get();
+    if (!sound) return;
+    sound.setVolume(vol);
+    sound.rate = Phaser.Math.FloatBetween(0.8, 1.2);
+    sound.play();
+  }
 
-  //   playAmbiente() {
-  //     let sound = this.poolAmbiente.get();
-  //     sound.setVolume(0.5);
-  //     sound.play();
-  //   }
+  playHit(vol) {
+    let sound = this.hitEffects.get();
+    if (!sound) return;
+    sound.setVolume(vol);
+    sound.rate = Phaser.Math.FloatBetween(0.8, 1.2);
+    sound.play();
+  }
 
-  //   playMusica() {
-  //     let sound = this.poolMusica.get();
-  //     sound.setVolume(0.2);
-  //     sound.loop = true;
-  //     sound.play();
-  //   }
+  playOrcDeath(vol) {
+    let sound = this.orcDeathEffects.get();
+    if (!sound) return;
+    sound.setVolume(vol);
+    sound.rate = Phaser.Math.FloatBetween(0.9, 1.1);
+    sound.play();
+  }
+
+  playDamageBuilding(vol) {
+    let sound = this.damageBuildingEffects.get();
+    if (!sound) return;
+    sound.setVolume(vol);
+    sound.rate = Phaser.Math.FloatBetween(0.8, 1.2);
+    sound.play();
+  }
+
+  playHorn(vol) {
+    this.horn.setVolume(vol);
+    this.horn.play();
+  }
+
+  playGameMusic(vol) {
+    this.gameMusic.setVolume(vol);
+    this.gameMusic.play();
+    this.gameMusic.loop = true;
+  }
+
+  playTrumpet(vol) {
+    this.trumpet.setVolume(vol);
+    this.trumpet.play();
+  }
 
   stop() {
     this.poolEffects.pool.forEach((sound) => {
       sound.stop();
       this.poolEffects.release(sound);
     });
-    // this.poolDisparo.pool.forEach((sound) => {
-    //   sound.stop();
-    //   this.poolDisparo.release(sound);
-    // });
-    // this.poolAmbiente.pool.forEach((sound) => {
-    //   sound.stop();
-    //   this.poolAmbiente.release(sound);
-    // });
-    // this.poolMusica.pool.forEach((sound) => {
-    //   sound.stop();
-    //   this.poolMusica.release(sound);
-    // });
+    this.hitEffects.pool.forEach((sound) => {
+      sound.stop();
+      this.hitEffects.release(sound);
+    });
+    this.arrowEffects.pool.forEach((sound) => {
+      sound.stop();
+      this.arrowEffects.release(sound);
+    });
+    this.orcDeathEffects.pool.forEach((sound) => {
+      sound.stop();
+      this.orcDeathEffects.release(sound);
+    });
+    this.damageBuildingEffects.pool.forEach((sound) => {
+      sound.stop();
+      this.damageBuildingEffects.release(sound);
+    });
+    this.gameMusic.stop();
+    this.trumpet.stop();
+    this.horn.stop();
   }
 }
 
@@ -87,19 +117,10 @@ class SoundPool {
   }
 
   get() {
-    if (this.availableSounds.length > 0) {
-      const sound = this.availableSounds.pop();
-      sound.isPlaying = true;
-      return sound;
-    } else {
-      const newSound = this.scene.sound.add(this.key);
-      newSound.setVolume(1);
-      newSound.on("complete", () => {
-        newSound.isPlaying = false;
-        this.availableSounds.push(newSound);
-      });
-      return newSound;
-    }
+    if (this.availableSounds.length <= 0) return null;
+    const sound = this.availableSounds.pop();
+    sound.isPlaying = true;
+    return sound;
   }
 
   release(sound) {

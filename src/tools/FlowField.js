@@ -1,8 +1,9 @@
 const NO_DIST = 0xffff;
+const UNVISITED = 0xfffe;
 const DistArray = Uint16Array;
 
 export default class FlowField {
-  constructor(width, height, cellSize) {
+  constructor(width, height, cellSize, graphics) {
     this.width = width / cellSize;
     this.height = height / cellSize;
     this.cellSize = cellSize;
@@ -13,7 +14,16 @@ export default class FlowField {
     this.visited = new Uint8Array(this.width * this.height).fill(0);
     this.flow = new Float32Array(2 * this.width * this.height).fill(0);
 
-    this.targets = [];
+    this.worker = new Worker("/src/workers/flowfieldWorker.js");
+
+    this.worker.onmessage = (e) => {
+      this.dists = e.data;
+      this.calculateAngles();
+      this.smoothFlowComponents(5);
+      this.drawFlowField(graphics, 0xff0000, 2);
+    };
+
+    this.targets = new Map();
   }
 
   _index(x, y) {
@@ -44,43 +54,8 @@ export default class FlowField {
     return true;
   }
 
-  BFS(targets) {
-    let queue = [];
-    let head = 0;
-
-    for (let i = 0; i < targets.length; i += 2) {
-      let { x, y } = this.worldToCell(targets[i], targets[i + 1]);
-      queue.push([x, y]);
-      const index = this._index(x, y);
-      this.visited[index] = 1;
-      this.dists[index] = 0;
-    }
-
-    let dx = [-1, 0, 1, 0];
-    let dy = [0, 1, 0, -1];
-
-    while (head < queue.length) {
-      let [x, y] = queue[head++];
-
-      let distance = this.dists[this._index(x, y)];
-
-      for (let i = 0; i < 4; i++) {
-        let nx = x + dx[i];
-        let ny = y + dy[i];
-
-        if (this.isValid(ny, nx)) {
-          const index = this._index(nx, ny);
-          this.visited[index] = 1;
-
-          if (this.dists[index] === NO_DIST) {
-            continue;
-          }
-
-          this.dists[index] = distance + 1;
-          queue.push([nx, ny]);
-        }
-      }
-    }
+  getWallsCopy() {
+    return [...this.walls];
   }
 
   calculateAngles() {
@@ -90,19 +65,14 @@ export default class FlowField {
 
         const dist = this.dists[index];
 
-        if (dist === NO_DIST || dist === 0) {
+        if (dist === NO_DIST || dist === 0 || dist === UNVISITED) {
           continue;
         }
 
-        let distLeft = this.dists[this._index(x - 1, y)] || NO_DIST;
-        let distRight = this.dists[this._index(x + 1, y)] || NO_DIST;
-        let distUp = this.dists[this._index(x, y - 1)] || NO_DIST;
-        let distDown = this.dists[this._index(x, y + 1)] || NO_DIST;
-
-        if (distLeft === NO_DIST) distLeft = dist;
-        if (distRight === NO_DIST) distRight = dist;
-        if (distUp === NO_DIST) distUp = dist;
-        if (distDown === NO_DIST) distDown = dist;
+        let distLeft = this.getDist(x - 1, y, dist);
+        let distRight = this.getDist(x + 1, y, dist);
+        let distUp = this.getDist(x, y - 1, dist);
+        let distDown = this.getDist(x, y + 1, dist);
 
         let gradX = distLeft - distRight;
         let gradY = distUp - distDown;
@@ -111,6 +81,12 @@ export default class FlowField {
         this.flow[index * 2 + 1] = gradY;
       }
     }
+  }
+
+  getDist(x, y, prev) {
+    if (x < 0 || y < 0 || x >= this.width || y >= this.height) return NO_DIST;
+    const d = this.dists[this._index(x, y)];
+    return d === NO_DIST ? prev * 1.5 : d;
   }
 
   smoothFlowComponents(iterations = 1) {
@@ -193,35 +169,38 @@ export default class FlowField {
 
   setWall(x, y) {
     this.walls.add(this._index(x, y));
+    this.sendWorker();
   }
 
   removeWall(x, y) {
     this.walls.delete(this._index(x, y));
+    this.sendWorker();
+  }
+
+  addTarget(tx, ty) {
+    this.targets.set(this._index(tx, ty), [tx, ty]);
+    this.sendWorker();
+  }
+
+  removeTarget(tx, ty) {
+    this.targets.delete(this._index(tx, ty));
+    this.sendWorker();
   }
 
   generate(targets, walls) {
-    this.targets = targets;
-    this.setWalls(walls);
-    this.BFS(targets);
-    this.calculateAngles();
-    this.smoothFlowComponents(10);
-  }
-
-  regenerateFull() {
-    this.visited.fill(0);
-    this.dists.fill(0);
-    this.flow.fill(NaN);
-
-    for (const h of this.walls) {
-      this.dists[h] = -1;
+    for (let i = 0; i < targets.length; i += 2) {
+      const x = targets[i];
+      const y = targets[i + 1];
+      const pos = this.worldToCell(x, y);
+      this.targets.set(this._index(pos.x, pos.y), [pos.x, pos.y]);
     }
-
-    this.BFS(this.targets);
-    this.calculateAngles();
+    this.setWalls(walls);
+    this.sendWorker();
   }
 
-  drawFlowField(graphics) {
+  drawFlowField(graphics, color, width) {
     graphics.clear();
+    graphics.lineStyle(width, color, 1);
     for (let y = 0; y < this.height; y++) {
       let text = y.toString() + " ";
       for (let x = 0; x < this.width; x++) {
@@ -270,5 +249,14 @@ export default class FlowField {
     const flowY = this.flow[this._index(x, y) * 2 + 1];
     if (isNaN(flowX) || isNaN(flowY)) return { x: 0, y: 0 };
     return { x: flowX, y: flowY };
+  }
+
+  sendWorker() {
+    this.worker.postMessage({
+      width: this.width,
+      height: this.height,
+      targets: this.targets,
+      walls: this.walls,
+    });
   }
 }

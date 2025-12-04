@@ -1,0 +1,110 @@
+export default [
+  {
+    // Oleada 1
+    count: 10,
+    minTimeBetweenSpawns: 200,
+    maxTimeBetweenSpawns: 200,
+    money: 100,
+    spawnPointsToUse: 2,
+    mageProbability: 0,
+    strongProbability: 0,
+    strongMageProbability: 0,
+    maxStrongLevel: 1,
+  },
+  {
+    // Oleada 2
+    count: 50,
+    minTimeBetweenSpawns: 120,
+    maxTimeBetweenSpawns: 150,
+    money: 150,
+    spawnPointsToUse: 2,
+    mageProbability: 0,
+    strongProbability: 0.05,
+    strongMageProbability: 0,
+    maxStrongLevel: 1,
+  },
+  {
+    // Oleada 3
+    count: 90,
+    minTimeBetweenSpawns: 100,
+    maxTimeBetweenSpawns: 120,
+    money: 200,
+    spawnPointsToUse: 3,
+    mageProbability: 0,
+    strongProbability: 0.1,
+    strongMageProbability: 0,
+    maxStrongLevel: 1,
+  },
+  {
+    // Oleada 4 – Aparecen magos por primera vez
+    count: 150,
+    minTimeBetweenSpawns: 90,
+    maxTimeBetweenSpawns: 110,
+    money: 300,
+    spawnPointsToUse: 5,
+    mageProbability: 0.05, // Primera aparición
+    strongProbability: 0.2,
+    strongMageProbability: 0,
+    maxStrongLevel: 1,
+  },
+  {
+    // Oleada 5
+    count: 250,
+    minTimeBetweenSpawns: 75,
+    maxTimeBetweenSpawns: 100,
+    money: 400,
+    spawnPointsToUse: 7,
+    mageProbability: 0.1,
+    strongProbability: 0.25,
+    strongMageProbability: 0.02,
+    maxStrongLevel: 2,
+  },
+  {
+    // Oleada 6
+    count: 350,
+    minTimeBetweenSpawns: 70,
+    maxTimeBetweenSpawns: 90,
+    money: 450,
+    spawnPointsToUse: 7,
+    mageProbability: 0.15,
+    strongProbability: 0.3,
+    strongMageProbability: 0.05,
+    maxStrongLevel: 2,
+  },
+  {
+    // Oleada 7
+    count: 500,
+    minTimeBetweenSpawns: 60,
+    maxTimeBetweenSpawns: 80,
+    money: 550,
+    spawnPointsToUse: 9,
+    mageProbability: 0.2,
+    strongProbability: 0.4,
+    strongMageProbability: 0.08,
+    maxStrongLevel: 3,
+  },
+  {
+    // Oleada 8
+    count: 700,
+    minTimeBetweenSpawns: 50,
+    maxTimeBetweenSpawns: 75,
+    money: 650,
+    spawnPointsToUse: 9,
+    mageProbability: 0.25,
+    strongProbability: 0.5,
+    strongMageProbability: 0.1,
+    maxStrongLevel: 3,
+  },
+  {
+    // Oleada 9
+    count: 1000,
+    minTimeBetweenSpawns: 40,
+    maxTimeBetweenSpawns: 60,
+    money: 750,
+    spawnPointsToUse: 9,
+    mageProbability: 0.3,
+    strongProbability: 0.6,
+    strongMageProbability: 0.15,
+    maxStrongLevel: 4,
+  },
+];

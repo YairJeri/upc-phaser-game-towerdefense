@@ -2,8 +2,8 @@ import WallManager from "../managers/WallManager.js";
 import LightSystem from "../managers/LightSystem.js";
 import StructureManager from "../managers/StructureManager.js";
 import SpatialHash from "../tools/SpatialHash.js";
-import StructureTypes from "../other/StructureInfo.js";
-import { walls } from "../other/walls.js";
+import StructureTypes from "../data/StructureInfo.js";
+import { walls } from "../data/walls.js";
 
 export default class BuildSystem {
   constructor(scene, width, height, cell_size, NavigationSystem) {
@@ -116,13 +116,14 @@ export default class BuildSystem {
     this.structureHash.insert(structure);
   }
 
-  addFarm(tx, ty) {
+  addVillage(tx, ty) {
     const id = this.lightSystem.addLight(
       tx * this.cell_size + this.cell_size / 2,
       ty * this.cell_size + this.cell_size / 2,
-      7
+      10
     );
-    const structure = this.structureManager.addFarm(tx, ty, id);
+    const structure = this.structureManager.addVillage(tx, ty, id);
+    this.NavigationSystem.addTarget(tx, ty);
     this.structureHash.insert(structure);
   }
 
@@ -146,8 +147,8 @@ export default class BuildSystem {
           ty,
           StructureTypes.Tower2.range
         );
-      case StructureTypes.Farm.id:
-        return this.addFarm(tx, ty);
+      case StructureTypes.Village.id:
+        return this.addVillage(tx, ty);
       default:
         return null;
     }
@@ -183,7 +184,6 @@ export default class BuildSystem {
   }
 
   reset() {
-    // Clear all structures except main structure
     const structuresToRemove = [];
     for (let [id, structure] of this.structureManager.structures) {
       if (structure.type !== StructureTypes.Main.id) {
@@ -195,21 +195,16 @@ export default class BuildSystem {
       this.removeStructureObj(structure);
     }
 
-    // Reset wall manager to initial state
     this.wallManager.clear();
-    // Re-add map walls
     for (let i = 0; i < walls.length; i += 2) {
       this.wallManager.addMapWall(walls[i], walls[i + 1]);
     }
 
-    // Reset light system
     this.lightSystem.reset();
 
-    // Clear hashes
     this.wallHash.clear();
     this.structureHash.clear();
 
-    // Regenerate colliders
     this.generateColliders();
   }
 

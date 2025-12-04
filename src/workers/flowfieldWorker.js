@@ -1,24 +1,19 @@
 const NO_DIST = 0xffff;
+const UNVISITED = 0xfffe;
 const DistArray = Uint16Array;
 
 onmessage = (e) => {
-  const { width, height, cell_size, targets, walls } = e.data;
+  const { width, height, targets, walls } = e.data;
 
   const visited = new Uint8Array(width * height).fill(0);
 
   const _index = (x, y) => y * width + x;
-  const isValid = (row, col) =>
-    row < height && col < width && visited[_index(col, row)] === 0;
-
-  const dists = BFS(
-    targets,
-    cell_size,
-    width * height,
-    visited,
-    _index,
-    isValid,
-    walls
-  );
+  const isValid = (row, col) => {
+    if (row <= 0 || col <= 0 || row >= height || col >= width) return false;
+    if (visited[_index(col, row)]) return false;
+    return true;
+  };
+  const dists = BFS(targets, width * height, visited, _index, isValid, walls);
 
   postMessage(dists);
 };
@@ -48,20 +43,19 @@ function worldToCell(px, py, cellSize) {
     y: Math.floor(py / cellSize),
   };
 }
-function BFS(targets, cell_size, size, visited, _index, isValid, walls) {
+function BFS(targets, size, visited, _index, isValid, walls) {
   let queue = [];
   let head = 0;
 
-  let dists = new DistArray(size).fill(0);
+  let dists = new DistArray(size).fill(UNVISITED);
 
   for (const h of walls) {
-    dists[h] = -1;
+    dists[h] = NO_DIST;
+    visited[h] = 1;
   }
 
-  for (let i = 0; i < targets.length; i += 2) {
-    let { x, y } = worldToCell(targets[i], targets[i + 1], cell_size);
-    queue.push([x, y]);
-    const index = _index(x, y);
+  for (let [index, position] of targets) {
+    queue.push(position);
     visited[index] = 1;
     dists[index] = 0;
   }
@@ -71,25 +65,26 @@ function BFS(targets, cell_size, size, visited, _index, isValid, walls) {
 
   while (head < queue.length) {
     let [x, y] = queue[head++];
-
     let distance = dists[_index(x, y)];
 
     for (let i = 0; i < 4; i++) {
       let nx = x + dx[i];
       let ny = y + dy[i];
 
-      if (isValid(ny, nx)) {
-        const index = _index(nx, ny);
-        visited[index] = 1;
+      const cellIndex = _index(nx, ny);
 
-        if (dists[index] === NO_DIST) {
-          continue;
-        }
+      if (!isValid(ny, nx)) continue;
 
-        dists[index] = distance + 1;
-        queue.push([nx, ny]);
-      }
+      if (dists[cellIndex] === NO_DIST) continue;
+
+      if (visited[cellIndex]) continue;
+
+      visited[cellIndex] = 1;
+      dists[cellIndex] = distance + 1;
+
+      queue.push([nx, ny]);
     }
   }
+
   return dists;
 }

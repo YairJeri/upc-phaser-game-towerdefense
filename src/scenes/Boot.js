@@ -36,6 +36,8 @@ export class Boot extends Phaser.Scene {
       "assets/particles/flares.json"
     );
 
+    this.load.image("particle", "assets/particles/Particle.png");
+
     this.load.bitmapFont(
       "gothic",
       "assets/fonts/bitmap/gothic.png",
@@ -63,6 +65,13 @@ export class Boot extends Phaser.Scene {
     );
 
     this.load.audio("explosion", "assets/sounds/explosion.mp3");
+    this.load.audio("arrow", "assets/sounds/arrow.mp3");
+    this.load.audio("hit", "assets/sounds/hit.mp3");
+    this.load.audio("orc_death", "assets/sounds/orc_death.mp3");
+    this.load.audio("damage_building", "assets/sounds/damage_building.mp3");
+    this.load.audio("horn", "assets/sounds/horn.mp3");
+    this.load.audio("game_music", "assets/sounds/game_music.mp3");
+    this.load.audio("trumpet", "assets/sounds/trumpet.mp3");
   }
 
   create() {

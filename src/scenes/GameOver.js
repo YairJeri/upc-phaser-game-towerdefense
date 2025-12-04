@@ -1,9 +1,11 @@
+import UIButton from "../ui/Button.js";
+
 export class GameOver extends Phaser.Scene {
   constructor() {
     super("GameOver");
   }
 
-  create() {
+  create(data) {
     // Fondo oscuro con fade in
     this.overlay = this.add.graphics();
     this.overlay.fillStyle(0x000000, 0.8);
@@ -44,9 +46,13 @@ export class GameOver extends Phaser.Scene {
     });
 
     // Texto de estadísticas
-    const finalWave = this.game.registry.get("finalWave") || 1;
-    const finalMoney = this.game.registry.get("finalMoney") || 0;
-    const finalEnemies = this.game.registry.get("finalEnemies") || 0;
+    let finalWave = data.wave;
+    let finalMoney = data.money;
+    let finalEnemies = data.enemies;
+
+    this.game.events.on("GameOver", (finalStats) => {
+      this.scene.restart(finalStats);
+    });
 
     this.statsText = this.add
       .text(
@@ -74,80 +80,96 @@ export class GameOver extends Phaser.Scene {
       ease: "Power2",
     });
 
-    // Botón "Volver a Jugar" mejorado
-    this.restartBtn = this.add.container(
+    this.restartBtn = new UIButton(
+      this,
       this.scale.width * 0.5,
-      this.scale.height * 0.75
+      this.scale.height * 0.75,
+      240,
+      40,
+      "VOLVER A JUGAR",
+      () => {
+        this.game.events.emit("Restart");
+        this.scene.sleep();
+      },
+      {
+        backgroundColor: 0x333333,
+        borderColor: 0x666666,
+        // hoverColor: 0xffff00,
+        hoverBorderColor: 0xffff00,
+      },
+      true
     );
 
-    const btnBg = this.add.graphics();
-    btnBg.fillStyle(0x333333, 0.9);
-    btnBg.fillRoundedRect(-120, -20, 240, 40, 10);
-    btnBg.lineStyle(3, 0xffffff, 1);
-    btnBg.strokeRoundedRect(-120, -20, 240, 40, 10);
+    // Botón "Volver a Jugar" mejorado
+    // this.restartBtn = this.add.container(
+    //   this.scale.width * 0.5,
+    //   this.scale.height * 0.75
+    // );
 
-    const btnText = this.add
-      .text(0, 0, "VOLVER A JUGAR", {
-        fontFamily: "Arial Black",
-        fontSize: 24,
-        color: "#ffffff",
-        align: "center",
-      })
-      .setOrigin(0.5);
+    // const btnBg = this.add.graphics();
+    // btnBg.fillStyle(0x333333, 0.9);
+    // btnBg.fillRoundedRect(-120, -20, 240, 40, 10);
+    // btnBg.lineStyle(3, 0xffffff, 1);
+    // btnBg.strokeRoundedRect(-120, -20, 240, 40, 10);
 
-    this.restartBtn.add([btnBg, btnText]);
-    this.restartBtn.setAlpha(0);
+    // const btnText = this.add
+    //   .text(0, 0, "VOLVER A JUGAR", {
+    //     fontFamily: "Arial Black",
+    //     fontSize: 24,
+    //     color: "#ffffff",
+    //     align: "center",
+    //   })
+    //   .setOrigin(0.5);
 
-    this.tweens.add({
-      targets: this.restartBtn,
-      alpha: 1,
-      y: this.scale.height * 0.75,
-      duration: 1000,
-      delay: 1200,
-      ease: "Power2",
-    });
+    // this.restartBtn.add([btnBg, btnText]);
+    // this.restartBtn.setAlpha(0);
 
-    this.restartBtn.setInteractive(
-      new Phaser.Geom.Rectangle(-120, -20, 240, 40),
-      Phaser.Geom.Rectangle.Contains
-    );
+    // this.tweens.add({
+    //   targets: this.restartBtn,
+    //   alpha: 1,
+    //   y: this.scale.height * 0.75,
+    //   duration: 1000,
+    //   delay: 1200,
+    //   ease: "Power2",
+    // });
 
-    this.restartBtn.on("pointerover", () => {
-      btnBg.clear();
-      btnBg.fillStyle(0x666666, 0.9);
-      btnBg.fillRoundedRect(-120, -20, 240, 40, 10);
-      btnBg.lineStyle(3, 0xffff00, 1);
-      btnBg.strokeRoundedRect(-120, -20, 240, 40, 10);
-      btnText.setTint(0xffff00);
-    });
+    // this.restartBtn.setInteractive(
+    //   new Phaser.Geom.Rectangle(-120, -20, 240, 40),
+    //   Phaser.Geom.Rectangle.Contains
+    // );
 
-    this.restartBtn.on("pointerout", () => {
-      btnBg.clear();
-      btnBg.fillStyle(0x333333, 0.9);
-      btnBg.fillRoundedRect(-120, -20, 240, 40, 10);
-      btnBg.lineStyle(3, 0xffffff, 1);
-      btnBg.strokeRoundedRect(-120, -20, 240, 40, 10);
-      btnText.clearTint();
-    });
+    // this.restartBtn.on("pointerover", () => {
+    //   btnBg.clear();
+    //   btnBg.fillStyle(0x666666, 0.9);
+    //   btnBg.fillRoundedRect(-120, -20, 240, 40, 10);
+    //   btnBg.lineStyle(3, 0xffff00, 1);
+    //   btnBg.strokeRoundedRect(-120, -20, 240, 40, 10);
+    //   btnText.setTint(0xffff00);
+    // });
 
-    this.restartBtn.on("pointerdown", () => {
-      // Efecto de click
-      this.tweens.add({
-        targets: this.restartBtn,
-        scale: 0.95,
-        duration: 100,
-        yoyo: true,
-        ease: "Power2",
-        onComplete: () => {
-          this.scene.resume("MainScene");
-          const scene = this.scene.get("MainScene");
-          // @ts-ignore
-          scene.scene.scene.resetGame();
-          this.scene.sleep("GameOver");
-          this.scene.get("HUD").scene.restart();
-        },
-      });
-    });
+    // this.restartBtn.on("pointerout", () => {
+    //   btnBg.clear();
+    //   btnBg.fillStyle(0x333333, 0.9);
+    //   btnBg.fillRoundedRect(-120, -20, 240, 40, 10);
+    //   btnBg.lineStyle(3, 0xffffff, 1);
+    //   btnBg.strokeRoundedRect(-120, -20, 240, 40, 10);
+    //   btnText.clearTint();
+    // });
+
+    // this.restartBtn.on("pointerdown", () => {
+    //   // Efecto de click
+    //   this.tweens.add({
+    //     targets: this.restartBtn,
+    //     scale: 0.95,
+    //     duration: 100,
+    //     yoyo: true,
+    //     ease: "Power2",
+    //     onComplete: () => {
+    //       this.game.events.emit("Restart");
+    //       this.scene.sleep();
+    //     },
+    //   });
+    // });
 
     // Botón "Salir" mejorado
     this.exitBtn = this.add.container(
