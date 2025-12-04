@@ -56,17 +56,9 @@ export class HUD extends Phaser.Scene {
       });
     });
 
-    this.game.events.on("CurrentHealth", (current) => {
-      this.healthText.setText(
-        `Health: ${current}/${StructureTypes.Main.health}`
-      );
-      this.updateHealthBar(current / StructureTypes.Main.health, 0, 0);
-    });
-    this.game.events.on("Restart", () => {
-      this.scene.restart();
-    });
-    this.game.events.on("GameOver", () => {
-      this.scene.sleep();
+    // Show alert when wave starts
+    this.game.events.on("StartWave", () => {
+      this.showWaveIncomingAlert();
     });
 
     // Listen for pause toggles to show/hide overlay and disable interactions
@@ -466,6 +458,29 @@ export class HUD extends Phaser.Scene {
     this.waveTextContainer.addElement(this.waveComText, 500, 80);
     this.waveTextContainer.addElement(this.waveMoneyText, 500, 160);
     this.waveTextContainer.hideInmediately();
+  }
+
+  showWaveIncomingAlert() {
+    // Only show centered red text, no container background
+    const cx = this.cameras.main.width / 2;
+    const cy = this.cameras.main.height / 2;
+    const text = this.add
+      .bitmapText(cx, cy, "thick_8x8", "Los enemigos ya vienen", 64)
+      .setOrigin(0.5)
+      .setTint(0xff0000)
+      .setAlpha(0)
+      .setDepth(10001);
+
+    this.tweens.add({ targets: text, alpha: 1, duration: 250, ease: "Sine.easeOut" });
+    this.time.delayedCall(1800, () => {
+      this.tweens.add({
+        targets: text,
+        alpha: 0,
+        duration: 700,
+        ease: "Sine.easeIn",
+        onComplete: () => text.destroy(),
+      });
+    });
   }
 
   showPauseOverlay() {

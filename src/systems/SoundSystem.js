@@ -8,6 +8,7 @@ export default class SoundSystem {
     this.orcDeathEffects = new SoundPool(scene, "orc_death", 5);
     this.damageBuildingEffects = new SoundPool(scene, "damage_building", 5);
 
+    // Use existing gameplay track; menu music is handled by StartMenu
     this.gameMusic = this.scene.sound.add("game_music");
     this.trumpet = this.scene.sound.add("trumpet");
     this.horn = this.scene.sound.add("horn");
