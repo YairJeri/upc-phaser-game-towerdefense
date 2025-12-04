@@ -3,7 +3,7 @@ export default {
     id: 0,
     name: "Main",
     cost: 0,
-    health: 10,
+    health: 200,
   },
   Village: {
     id: 3,
