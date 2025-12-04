@@ -10,6 +10,7 @@ import ProjectilePool from "../tools/ProyectilePool.js";
 import WaveSystem from "../systems/WaveSystem.js";
 import EconomySystem from "../systems/EconomySystem.js";
 import SoundSystem from "../systems/SoundSystem.js";
+import StructureTypes from "../data/StructureInfo.js";
 
 export class MainScene extends Phaser.Scene {
   constructor() {
@@ -22,6 +23,8 @@ export class MainScene extends Phaser.Scene {
     this.actualTower = null;
     this.cameraVelX = 0;
     this.cameraVelY = 0;
+    this.isGamePaused = false;
+    this.isSellMode = false;
   }
 
   preload() {
@@ -197,6 +200,10 @@ export class MainScene extends Phaser.Scene {
     this.initEmitters();
 
     this.initSystems();
+    // Keep local pause flag in sync even when HUD toggles pause
+    this.game.events.on("GamePaused", (paused) => {
+      this.isGamePaused = paused;
+    });
 
     this.economySystem.addMoney(500);
 
@@ -261,6 +268,11 @@ export class MainScene extends Phaser.Scene {
     this.addInitialVillages();
     this.addBridge();
     this.buildSystem.generateColliders();
+
+    // Sell mode toggle from HUD
+    this.game.events.on("SellMode", (enabled) => {
+      this.isSellMode = !!enabled;
+    });
   }
 
   addBridge() {
@@ -294,7 +306,27 @@ export class MainScene extends Phaser.Scene {
 
     this.space.on("down", () => {});
 
+    // Toggle pause/resume with Escape
+    this.escape = this.input.keyboard.addKey(
+      Phaser.Input.Keyboard.KeyCodes.ESC
+    );
+    this.escape.on("down", () => {
+      const isPaused = this.scene.isPaused("MainScene");
+      if (isPaused) {
+        this.scene.resume("MainScene");
+        this.isGamePaused = false;
+        this.game.events.emit("GamePaused", false);
+        this.sound.resumeAll?.();
+      } else {
+        this.scene.pause("MainScene");
+        this.isGamePaused = true;
+        this.game.events.emit("GamePaused", true);
+        this.sound.pauseAll?.();
+      }
+    });
+
     this.input.on("pointermove", (pointer) => {
+      if (this.isGamePaused) return;
       this.handleCameraMovement(pointer);
       const worldX = pointer.worldX;
       const worldY = pointer.worldY;
@@ -317,22 +349,42 @@ export class MainScene extends Phaser.Scene {
     });
 
     this.input.on("pointerup", (pointer) => {
+      if (this.isGamePaused) return;
       console.log("Tile clickeado:", this.actTileX, this.actTileY);
       if (pointer.button === 1) {
       }
       if (pointer.button === 0) {
-        if (
-          this.condition &&
-          this.actualTower &&
-          this.economySystem.hasEnoughMoney(this.actualTower.cost)
-        ) {
-          this.economySystem.spendMoney(this.actualTower.cost);
-          this.buildSystem.addStructure(
-            this.actualTower.type,
+        if (this.isSellMode) {
+          const st = this.buildSystem.structureManager.getStructureAt(
             this.actTileX,
-            this.actTileY,
-            7
+            this.actTileY
           );
+          if (st && st.type !== 0) {
+            // Refund half cost
+            const typeInfo = Phaser.Utils.Objects.GetValue(
+              StructureTypes,
+              Object.keys(StructureTypes).find(
+                (k) => StructureTypes[k].id === st.type
+              )
+            );
+            const refund = Math.floor((typeInfo?.cost || 0) / 2);
+            if (refund > 0) this.economySystem.addMoney(refund);
+            this.buildSystem.removeStructureObj(st);
+          }
+        } else {
+          if (
+            this.condition &&
+            this.actualTower &&
+            this.economySystem.hasEnoughMoney(this.actualTower.cost)
+          ) {
+            this.economySystem.spendMoney(this.actualTower.cost);
+            this.buildSystem.addStructure(
+              this.actualTower.type,
+              this.actTileX,
+              this.actTileY,
+              7
+            );
+          }
         }
       }
     });
