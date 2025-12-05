@@ -10,6 +10,7 @@ import ProjectilePool from "../tools/ProyectilePool.js";
 import WaveSystem from "../systems/WaveSystem.js";
 import EconomySystem from "../systems/EconomySystem.js";
 import SoundSystem from "../systems/SoundSystem.js";
+import StructureTypes from "../data/StructureInfo.js";
 
 export class MainScene extends Phaser.Scene {
   constructor() {
@@ -22,6 +23,8 @@ export class MainScene extends Phaser.Scene {
     this.actualTower = null;
     this.cameraVelX = 0;
     this.cameraVelY = 0;
+    this.isGamePaused = false;
+    this.isSellMode = false;
   }
 
   preload() {
@@ -197,8 +200,12 @@ export class MainScene extends Phaser.Scene {
     this.initEmitters();
 
     this.initSystems();
+    // Keep local pause flag in sync even when HUD toggles pause
+    this.game.events.on("GamePaused", (paused) => {
+      this.isGamePaused = paused;
+    });
 
-    this.economySystem.addMoney(500);
+    this.economySystem.addMoney(200);
 
     this.game.events.on("TowerChange", (tower) => {
       this.actualTower = tower;
@@ -229,7 +236,7 @@ export class MainScene extends Phaser.Scene {
     });
 
     this.game.events.on("StartWave", () => {
-      this.soundSystem.playHorn(0.5);
+      this.soundSystem.playHorn(0.9);
     });
 
     this.game.events.on("WaveOver", () => {
@@ -261,6 +268,11 @@ export class MainScene extends Phaser.Scene {
     this.addInitialVillages();
     this.addBridge();
     this.buildSystem.generateColliders();
+
+    // Sell mode toggle from HUD
+    this.game.events.on("SellMode", (enabled) => {
+      this.isSellMode = !!enabled;
+    });
   }
 
   addBridge() {
@@ -294,7 +306,27 @@ export class MainScene extends Phaser.Scene {
 
     this.space.on("down", () => {});
 
+    // Toggle pause/resume with Escape
+    this.escape = this.input.keyboard.addKey(
+      Phaser.Input.Keyboard.KeyCodes.ESC
+    );
+    this.escape.on("down", () => {
+      const isPaused = this.scene.isPaused("MainScene");
+      if (isPaused) {
+        this.scene.resume("MainScene");
+        this.isGamePaused = false;
+        this.game.events.emit("GamePaused", false);
+        this.sound.resumeAll?.();
+      } else {
+        this.scene.pause("MainScene");
+        this.isGamePaused = true;
+        this.game.events.emit("GamePaused", true);
+        this.sound.pauseAll?.();
+      }
+    });
+
     this.input.on("pointermove", (pointer) => {
+      if (this.isGamePaused) return;
       this.handleCameraMovement(pointer);
       const worldX = pointer.worldX;
       const worldY = pointer.worldY;
@@ -317,22 +349,42 @@ export class MainScene extends Phaser.Scene {
     });
 
     this.input.on("pointerup", (pointer) => {
+      if (this.isGamePaused) return;
       console.log("Tile clickeado:", this.actTileX, this.actTileY);
       if (pointer.button === 1) {
       }
       if (pointer.button === 0) {
-        if (
-          this.condition &&
-          this.actualTower &&
-          this.economySystem.hasEnoughMoney(this.actualTower.cost)
-        ) {
-          this.economySystem.spendMoney(this.actualTower.cost);
-          this.buildSystem.addStructure(
-            this.actualTower.type,
+        if (this.isSellMode) {
+          const st = this.buildSystem.structureManager.getStructureAt(
             this.actTileX,
-            this.actTileY,
-            7
+            this.actTileY
           );
+          if (st && st.type !== 0) {
+            // Refund half cost
+            const typeInfo = Phaser.Utils.Objects.GetValue(
+              StructureTypes,
+              Object.keys(StructureTypes).find(
+                (k) => StructureTypes[k].id === st.type
+              )
+            );
+            const refund = Math.floor((typeInfo?.cost || 0) / 2);
+            if (refund > 0) this.economySystem.addMoney(refund);
+            this.buildSystem.removeStructureObj(st);
+          }
+        } else {
+          if (
+            this.condition &&
+            this.actualTower &&
+            this.economySystem.hasEnoughMoney(this.actualTower.cost)
+          ) {
+            this.economySystem.spendMoney(this.actualTower.cost);
+            this.buildSystem.addStructure(
+              this.actualTower.type,
+              this.actTileX,
+              this.actTileY,
+              7
+            );
+          }
         }
       }
     });
@@ -472,17 +524,11 @@ export class MainScene extends Phaser.Scene {
 
   addInitialVillages() {
     const villages = [
-      // --- CLUSTER ESTE (zona agrícola con varias aldeas)
-      43, 18, 44, 20, 46, 21, 44, 23, 47, 24,
+      30, 47, 33, 50, 31, 56, 33, 48, 29, 52,
 
-      // --- CLUSTER SUR (pueblos costeros / desorganizados)
-      28, 46, 30, 47, 33, 50, 27, 50, 33, 48, 29, 52,
+      52, 33, 50, 34, 56, 35, 53, 37, 48, 36,
 
-      // --- CLUSTER OESTE (zona montañosa)
-      23, 26, 26, 24, 26, 27,
-
-      // --- MICROALDEAS / PUEBLOS SUELTOS
-      35, 27, 39, 30, 28, 26, 30, 38, 49, 29, 37, 47,
+      23, 26, 26, 24, 26, 27, 28, 26, 30, 15, 34, 33
     ];
 
     for (let i = 0; i < villages.length; i += 2) {
@@ -497,7 +543,7 @@ export class MainScene extends Phaser.Scene {
     this.waveSystem.timeSinceLastSpawn = 0;
 
     // Reset economy system
-    this.economySystem.money = 500;
+    this.economySystem.money = 200;
     this.economySystem.updateUI();
 
     // Reset build system - clear all structures except main structure
@@ -513,12 +559,9 @@ export class MainScene extends Phaser.Scene {
     this.actualTower = null;
 
     // Reset game registry values
-    this.game.registry.set("finalWave", 1);
-    this.game.registry.set("finalMoney", 0);
-    this.game.registry.set("finalEnemies", 0);
 
     // Re-add main structure
-    this.buildSystem.addMainStructure(12);
+    this.buildSystem.addMainStructure(16);
     this.addInitialVillages();
 
     // Regenerate navigation

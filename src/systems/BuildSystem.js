@@ -186,9 +186,9 @@ export default class BuildSystem {
   reset() {
     const structuresToRemove = [];
     for (let [id, structure] of this.structureManager.structures) {
-      if (structure.type !== StructureTypes.Main.id) {
+      // if (structure.type !== StructureTypes.Main.id) {
         structuresToRemove.push(structure);
-      }
+      // }
     }
 
     for (let structure of structuresToRemove) {
@@ -204,6 +204,7 @@ export default class BuildSystem {
 
     this.wallHash.clear();
     this.structureHash.clear();
+    this.structureManager.structures.clear();
 
     this.generateColliders();
   }

@@ -94,6 +94,12 @@ export default class WaveSystem {
   spawnTick() {
     if (!this.isWaveActive) return;
 
+    if (this.currentWaveIndex === 1) {
+      const spawnPoint = this.tutorialSpawn(this.spawnedEnemies - 1);
+      this.enemySystem.spawn(spawnPoint.x, spawnPoint.y, "orc", 1);
+      return;
+    }
+
     const availableSections = this.edgeSpawn.slice(
       0,
       this.wave.spawnPointsToUse
@@ -149,6 +155,19 @@ export default class WaveSystem {
       level = Phaser.Math.Between(2, wave.maxStrongLevel); // strong orc
     }
     this.enemySystem.spawn(spawnPoint.x, spawnPoint.y, type, level);
+  }
+
+  tutorialSpawn(spawnIndex) {
+    const pointA = { x: 30 * 32, y: 58 * 32 };
+    const pointB = { x: 58 * 32, y: 37 * 32 };
+
+    const half = Math.floor(this.wave.count / 2);
+
+    if (spawnIndex < half) {
+      return pointA;
+    }
+
+    return pointB;
   }
 
   reset() {

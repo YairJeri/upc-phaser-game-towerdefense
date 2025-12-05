@@ -12,6 +12,8 @@ export class HUD extends Phaser.Scene {
   create() {
     this.waveNumber = 0;
     this.waveMoneyGenerated = 0;
+    this.isPaused = false;
+    this.towerBtnContainers = [];
 
     this.createTopLeftContainer();
 
@@ -41,10 +43,11 @@ export class HUD extends Phaser.Scene {
     this.game.events.on("WaveOver", () => {
       this.waveTextContainer.show();
       this.waveMoneyText.setText(
-        `Income: $${this.waveMoneyGenerated}  Wave Bonus:$${
+        `Income: $${this.waveMoneyGenerated}  Wave Bonus:$ ${
           waves[this.waveNumber - 1].money
         }`
       );
+      this.waveMoneyGenerated = 0;
 
       this.time.delayedCall(3000, () => {
         this.waveTextContainer.hide();
@@ -54,6 +57,11 @@ export class HUD extends Phaser.Scene {
       });
     });
 
+    // Show alert when wave starts
+    // this.game.events.on("StartWave", () => {
+    //   this.showWaveIncomingAlert();
+    // });
+    
     this.game.events.on("CurrentHealth", (current) => {
       this.healthText.setText(
         `Health: ${current}/${StructureTypes.Main.health}`
@@ -65,6 +73,57 @@ export class HUD extends Phaser.Scene {
     });
     this.game.events.on("GameOver", () => {
       this.scene.sleep();
+    });
+
+    // Listen for pause toggles to show/hide overlay and disable interactions
+    this.game.events.on("GamePaused", (paused) => {
+      this.isPaused = paused;
+      if (paused) {
+        this.showPauseOverlay();
+        // Disable start wave hit area
+        if (this.startWaveButton?.bg) this.startWaveButton.bg.disableInteractive?.();
+        // Disable tower button interactions and hide tooltip
+        this.towerBtnContainers.forEach((btn) => btn.disableInteractive?.());
+        this.hideTooltip();
+      } else {
+        this.hidePauseOverlay();
+        // Re-enable start wave hit area
+        if (this.startWaveButton?.bg) {
+          this.startWaveButton.bg.setInteractive?.(
+            new Phaser.Geom.Rectangle(
+              this.startWaveButton.x,
+              this.startWaveButton.y,
+              this.startWaveButton.width,
+              this.startWaveButton.height
+            ),
+            Phaser.Geom.Rectangle.Contains
+          );
+        }
+        // Re-enable tower button interactions
+        this.towerBtnContainers.forEach((btn) =>
+          btn.setInteractive?.(
+            new Phaser.Geom.Rectangle(0, 0, 90, 90),
+            Phaser.Geom.Rectangle.Contains
+          )
+        );
+      }
+    });
+
+    // Global Escape handler to toggle MainScene pause from HUD (HUD stays active)
+    this.escape = this.input.keyboard.addKey(
+      Phaser.Input.Keyboard.KeyCodes.ESC
+    );
+    this.escape.on("down", () => {
+      const isPaused = this.scene.isPaused("MainScene");
+      if (isPaused) {
+        this.scene.resume("MainScene");
+        this.game.events.emit("GamePaused", false);
+        this.sound.resumeAll?.();
+      } else {
+        this.scene.pause("MainScene");
+        this.game.events.emit("GamePaused", true);
+        this.sound.pauseAll?.();
+      }
     });
   }
 
@@ -95,7 +154,7 @@ export class HUD extends Phaser.Scene {
     this.topLeftContainer.addElement(this.coin, 100, 80);
 
     this.moneyText = this.add
-      .bitmapText(0, 0, "minogram", "$500", 20)
+      .bitmapText(0, 0, "minogram", "$200", 20)
       .setTint(0xffd700);
     this.topLeftContainer.addElement(this.moneyText, 120, 72);
 
@@ -304,6 +363,7 @@ export class HUD extends Phaser.Scene {
         new Phaser.Geom.Rectangle(0, 0, 90, 90),
         Phaser.Geom.Rectangle.Contains
       );
+      this.towerBtnContainers.push(btnContainer);
 
       const bg = this.add.rectangle(0, 0, 90, 90, 0x000000, 0);
       bg.setOrigin(0.5);
@@ -315,10 +375,12 @@ export class HUD extends Phaser.Scene {
       btnContainer.add([bg, buttonSprite]);
 
       btnContainer.on("pointerdown", () => {
+        if (this.isPaused) return;
         this.selectTower(data, btnContainer);
       });
 
       btnContainer.on("pointerover", () => {
+        if (this.isPaused) return;
         this.showTooltip(
           data,
           this.bottomContainer.x + buttonX,
@@ -352,6 +414,7 @@ export class HUD extends Phaser.Scene {
   }
 
   showTooltip(towerData, x, y) {
+    if (this.isPaused) return;
     this.tooltipTitleText.setText(towerData.name);
     this.tooltipCostText.setText(`$${towerData.cost}`);
     this.tooltipDescriptionText.setText(towerData.description);
@@ -409,5 +472,83 @@ export class HUD extends Phaser.Scene {
     this.waveTextContainer.addElement(this.waveComText, 500, 80);
     this.waveTextContainer.addElement(this.waveMoneyText, 500, 160);
     this.waveTextContainer.hideInmediately();
+  }
+
+  showWaveIncomingAlert() {
+    // Only show centered red text, no container background
+    const cx = this.cameras.main.width / 2;
+    const cy = this.cameras.main.height / 2;
+    const text = this.add
+      .bitmapText(cx, cy, "thick_8x8", "Los enemigos ya vienen", 64)
+      .setOrigin(0.5)
+      .setTint(0xff0000)
+      .setAlpha(0)
+      .setDepth(10001);
+
+    this.tweens.add({ targets: text, alpha: 1, duration: 250, ease: "Sine.easeOut" });
+    this.time.delayedCall(1800, () => {
+      this.tweens.add({
+        targets: text,
+        alpha: 0,
+        duration: 700,
+        ease: "Sine.easeIn",
+        onComplete: () => text.destroy(),
+      });
+    });
+  }
+
+  showPauseOverlay() {
+    // Create dim background once
+    if (!this.pauseDim) {
+      this.pauseDim = this.add.rectangle(
+        0,
+        0,
+        this.cameras.main.width,
+        this.cameras.main.height,
+        0x000000,
+        0.5
+      );
+      this.pauseDim.setOrigin(0);
+      this.pauseDim.setDepth(9998);
+      this.pauseDim.setScrollFactor(0);
+      this.pauseDim.setVisible(false);
+    }
+
+    if (!this.pauseContainer) {
+      this.pauseContainer = new UIContainer(
+        this,
+        this.cameras.main.width / 2,
+        this.cameras.main.height / 2,
+        600,
+        160,
+        0.85,
+        12,
+        true
+      );
+      this.pauseText = this.add
+        .bitmapText(0, 0, "thick_8x8", "PAUSA", 80)
+        .setOrigin(0.5);
+      const hintText = this.add
+        .bitmapText(0, 0, "minogram", "Presiona ESC para continuar", 28)
+        .setOrigin(0.5);
+      // Ensure overlay stays above dim
+      this.pauseContainer.container.setDepth(9999);
+      this.pauseText.setDepth(10001);
+      hintText.setDepth(10001);
+      this.pauseContainer.addElement(this.pauseText, 300, 60);
+      this.pauseContainer.addElement(hintText, 300, 120);
+      this.pauseContainer.hideInmediately();
+    }
+    this.pauseDim.setVisible(true);
+    this.pauseContainer.show();
+  }
+
+  hidePauseOverlay() {
+    if (this.pauseContainer) {
+      this.pauseContainer.hide();
+    }
+    if (this.pauseDim) {
+      this.pauseDim.setVisible(false);
+    }
   }
 }
