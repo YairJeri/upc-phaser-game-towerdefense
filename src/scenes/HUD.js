@@ -53,7 +53,6 @@ export class HUD extends Phaser.Scene {
         this.waveTextContainer.hide();
 
         this.startWaveButton.setActive();
-        // this.bottomContainer.show();
       });
     });
 
@@ -68,9 +67,15 @@ export class HUD extends Phaser.Scene {
       );
       this.updateHealthBar(current / StructureTypes.Main.health, 0, 0);
     });
-    this.game.events.on("Restart", () => {
+    this.game.events.on("Restart", (replay) => {
+      if (replay)
+        this.scene.restart();
+    });
+
+    this.game.events.on("GameStart", () => {
       this.scene.restart();
     });
+
     this.game.events.on("GameOver", () => {
       this.scene.sleep();
     });
@@ -154,7 +159,7 @@ export class HUD extends Phaser.Scene {
     this.topLeftContainer.addElement(this.coin, 100, 80);
 
     this.moneyText = this.add
-      .bitmapText(0, 0, "minogram", "$200", 20)
+      .bitmapText(0, 0, "minogram", "$300", 20)
       .setTint(0xffd700);
     this.topLeftContainer.addElement(this.moneyText, 120, 72);
 

@@ -9,7 +9,7 @@ export default {
     id: 3,
     name: "Village",
     cost: 100,
-    income: 100,
+    income: 150,
     health: 3,
   },
   Tower1: {

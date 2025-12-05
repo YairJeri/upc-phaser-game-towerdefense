@@ -186,11 +186,6 @@ export class MainScene extends Phaser.Scene {
   }
 
   create() {
-    this.scene.launch("HUD");
-    this.scene.bringToTop("HUD");
-    this.scene.launch("GameOver");
-    this.scene.bringToTop("GameOver");
-    this.scene.sleep("GameOver");
 
     this.initAnimations();
     this.initMap();
@@ -205,7 +200,7 @@ export class MainScene extends Phaser.Scene {
       this.isGamePaused = paused;
     });
 
-    this.economySystem.addMoney(200);
+    this.economySystem.addMoney(300);
 
     this.game.events.on("TowerChange", (tower) => {
       this.actualTower = tower;
@@ -216,9 +211,16 @@ export class MainScene extends Phaser.Scene {
       this.scene.pause("MainScene");
     });
 
-    this.game.events.on("Restart", () => {
+    this.game.events.on("Restart", (replay) => {
       this.resetGame();
       this.scene.resume("MainScene");
+
+      if (replay)
+      {
+        this.soundSystem.playGameMusic(0.25);
+      } else {
+        this.scene.sleep();
+      }
     });
 
     this.game.events.on("EKilled", () => {
@@ -229,10 +231,16 @@ export class MainScene extends Phaser.Scene {
       this.navigationSystem.removeTarget(tx, ty);
     });
 
-    this.game.events.on("MainStructureDestroyed", () => {
+    this.game.events.on("GameEnded", (win) => {
       this.finalStats.wave = this.waveSystem.currentWaveIndex;
       this.finalStats.money = this.economySystem.money;
+      this.finalStats.win = win
       this.game.events.emit("GameOver", this.finalStats);
+    });
+
+    this.game.events.on("GameStart", () => {
+      this.scene.wake();
+      this.soundSystem.playGameMusic(0.25);
     });
 
     this.game.events.on("StartWave", () => {
@@ -264,7 +272,6 @@ export class MainScene extends Phaser.Scene {
 
     this.initInputs();
 
-    this.soundSystem.playGameMusic(0.25);
     this.addInitialVillages();
     this.addBridge();
     this.buildSystem.generateColliders();
@@ -528,7 +535,7 @@ export class MainScene extends Phaser.Scene {
 
       52, 33, 50, 34, 56, 35, 53, 37, 48, 36,
 
-      23, 26, 26, 24, 26, 27, 28, 26, 30, 15, 34, 33
+      23, 26, 26, 24, 26, 27, 28, 26, 27, 15, 34, 33
     ];
 
     for (let i = 0; i < villages.length; i += 2) {
@@ -543,7 +550,7 @@ export class MainScene extends Phaser.Scene {
     this.waveSystem.timeSinceLastSpawn = 0;
 
     // Reset economy system
-    this.economySystem.money = 200;
+    this.economySystem.money = 300;
     this.economySystem.updateUI();
 
     // Reset build system - clear all structures except main structure
@@ -577,8 +584,6 @@ export class MainScene extends Phaser.Scene {
     ];
     this.navigationSystem.generateStatic(targets, this.buildSystem);
     this.buildSystem.generateColliders();
-
-    this.soundSystem.playGameMusic(0.25);
   }
 
   update(time, dt_ms) {
