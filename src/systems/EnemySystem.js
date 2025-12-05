@@ -52,6 +52,7 @@ export default class EnemySystem {
   }
 
   update(dt, NavigationSystem, BuildSystem) {
+    const stuckTimeLimit = 2;
     this.pool.forEachActive((entity) => {
       if (entity.isDying) {
         this.spatialHash.remove(entity);
@@ -60,6 +61,38 @@ export default class EnemySystem {
         this.despawn(entity);
         return;
       }
+      if (!entity.isAttacking) {
+        if (entity._lastPosition === undefined) {
+            entity._lastPosition = { x: entity.px, y: entity.py };
+            entity._stuckTimer = 0;
+        } else {
+            const dx = entity.px - entity._lastPosition.x;
+            const dy = entity.py - entity._lastPosition.y;
+            const distanceSquared = dx * dx + dy * dy;
+
+
+            const threshold = 1; // distancia mínima para considerarlo movimiento
+            if (distanceSquared < threshold * threshold) {
+                entity._stuckTimer += dt;
+                if (entity._stuckTimer >= stuckTimeLimit) {
+                    // enemigo estancado por demasiado tiempo, muere
+                    entity.isDead = true;
+                    return;
+                }
+            } else {
+                entity._stuckTimer = 0;
+                entity._lastPosition.x = entity.px;
+                entity._lastPosition.y = entity.py;
+            }
+        }
+      } else {
+          // Reinicia timer si está atacando
+          if (entity._stuckTimer !== undefined) {
+              entity._stuckTimer = 0;
+          }
+      }
+
+
       if (entity.isAttacking) return;
 
       const nearbyEntities = this.spatialHash.query(

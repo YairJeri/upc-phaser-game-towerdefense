@@ -70,9 +70,10 @@ export class Boot extends Phaser.Scene {
     this.load.audio("orc_death", "assets/sounds/orc_death.mp3");
     this.load.audio("damage_building", "assets/sounds/damage_building.mp3");
     this.load.audio("horn", "assets/sounds/horn.mp3");
-      this.load.audio("game_music", "assets/sounds/game_music.mp3"); // Keeping the existing line
-      // New menu music (WAV)
-      this.load.audio("music_menu", "assets/sounds/music_menu.wav");
+    this.load.audio("game_music", "assets/sounds/game_music.mp3");
+    this.load.audio("orchestral-win", "assets/sounds/orchestral-win.mp3");
+    this.load.audio("defeat", "assets/sounds/defeat.mp3");
+    this.load.audio("music_menu", "assets/sounds/music_menu.wav");
     this.load.audio("trumpet", "assets/sounds/trumpet.mp3");
     // Background image for Start Menu
     this.load.image("Fondo_ia", "assets/backgrounds/Fondo_ia.png");

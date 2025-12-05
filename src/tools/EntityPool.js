@@ -250,7 +250,7 @@ class Entity {
     this.isDying = true;
     this.scene.game.events.emit(
       "MoneyGain",
-      Math.floor(Math.random() * 5),
+      Math.floor(Math.random() * 7 + 3) ,
       false
     );
 

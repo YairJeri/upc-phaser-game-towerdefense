@@ -12,7 +12,7 @@ export default class WaveSystem {
     this.edgeSpawn = [
       { x: w / 2, y: h - 32, x2: w - 32, y2: h - 32 },
       { x: w - 32, y: h - 32, x2: w - 32, y2: 32 * 16 - 32 },
-      { x: 29 * 32, y: 32, x2: 35 * 32, y2: 32 },
+      { x: 30 * 32, y: 32, x2: 35 * 32, y2: 32 },
       { x: 3 * 32, y: 44 * 32, x2: 3 * 32, y2: 43 * 32 },
       { x: 5 * 32, y: 30 * 32, x2: 5 * 32, y2: 34 * 32 },
       { x: 32, y: 46 * 32, x2: 32, y2: 60 * 32 },
@@ -71,10 +71,15 @@ export default class WaveSystem {
 
     if (this.spawnedEnemies >= this.wave.count) {
       if (this.enemySystem.pool.getActiveCount() === 0) {
-        this.scene.game.events.emit("MoneyGain", this.wave.money, false);
-        this.scene.game.events.emit("WaveOver");
-        this.scene.game.events.emit("Remaining", 0);
         this.isWaveActive = false;
+
+        if (this.currentWaveIndex >= this.waves.length) {
+          this.scene.game.events.emit("GameEnded", true);
+        } else {
+          this.scene.game.events.emit("MoneyGain", this.wave.money, false);
+          this.scene.game.events.emit("WaveOver");
+          this.scene.game.events.emit("Remaining", 0);
+        }
       }
       return;
     }
@@ -145,7 +150,7 @@ export default class WaveSystem {
 
     const r = Math.random();
 
-    if (wave.number >= 4 && r < wave.mageProbability) {
+    if (this.currentWaveIndex >= 4 && r < wave.mageProbability) {
       type = "mage";
     } else if (r < wave.strongMageProbability) {
       type = "mage";
@@ -154,6 +159,7 @@ export default class WaveSystem {
       type = "orc";
       level = Phaser.Math.Between(2, wave.maxStrongLevel); // strong orc
     }
+
     this.enemySystem.spawn(spawnPoint.x, spawnPoint.y, type, level);
   }
 

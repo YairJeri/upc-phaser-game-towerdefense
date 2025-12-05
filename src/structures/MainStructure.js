@@ -14,9 +14,8 @@ export default class MainStructure extends Structure {
   setCurrentHealth(currentHealth) {
     super.setCurrentHealth(currentHealth);
     this.scene.game.events.emit("CurrentHealth", this.currentHealth);
-    console.log(currentHealth);
     if (this.currentHealth <= 0) {
-      this.scene.game.events.emit("MainStructureDestroyed");
+      this.scene.game.events.emit("GameEnded", false);
     }
   }
 }

@@ -7,6 +7,21 @@ export class StartMenu extends Phaser.Scene {
   }
 
   create() {
+    this.scene.launch("MainScene")
+    this.scene.get("MainScene").events.once("create", () => {
+      this.scene.sleep("MainScene");
+  });
+    this.scene.launch("HUD");
+    this.scene.bringToTop("HUD");
+    this.scene.get("HUD").events.once("create", () => {
+      this.scene.sleep("HUD");
+  });
+    this.scene.launch("GameOver");
+    this.scene.bringToTop("GameOver");
+    this.scene.get("GameOver").events.once("create", () => {
+      this.scene.sleep("GameOver");
+  });
+
     const { width, height } = this.cameras.main;
     // Play menu music if available and audio is unlocked; otherwise wait for unlock
     this.menuMusic = this.sound.add("music_menu", { loop: true, volume: 0.4 });
@@ -50,13 +65,17 @@ export class StartMenu extends Phaser.Scene {
     new UIButton(this, width / 2, height / 2 + 60, 240, 56, "Jugar", () => {
       this.startGame();
     }, { fontKey: "minogram", fontSize: 28 }, true);
+
+    this.game.events.on("Restart", (replay) => {
+      if(replay) return;
+      this.menuMusic.play();
+    });
   }
 
   startGame() {
-    // Start HUD and MainScene, ensure HUD is on top
-    // Stop menu music before starting game
     this.menuMusic.stop();
-    this.scene.start("MainScene");
+    // this.scene.wake("MainScene");
+    this.game.events.emit("GameStart");
   }
 
   scaleBackground(bg) {

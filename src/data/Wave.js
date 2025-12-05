@@ -19,7 +19,7 @@ export default [
     money: 150,
     spawnPointsToUse: 2,
     mageProbability: 0,
-    strongProbability: 0.05,
+    strongProbability: 0,
     strongMageProbability: 0,
     maxStrongLevel: 1,
   },

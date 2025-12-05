@@ -20,8 +20,10 @@ export class GameOver extends Phaser.Scene {
     });
     
     // Texto "GAME OVER" con animación
+
+    let text = data.win? "YOU WIN" : "GAME OVER";
     this.gameOverText = this.add
-      .text(this.scale.width * 0.5, this.scale.height * 0.3, "GAME OVER", {
+      .text(this.scale.width * 0.5, this.scale.height * 0.3, text, {
         fontFamily: "Arial Black",
         fontSize: 64,
         color: "#ff0000",
@@ -85,7 +87,9 @@ export class GameOver extends Phaser.Scene {
       40,
       "VOLVER A JUGAR",
       () => {
-        this.game.events.emit("Restart");
+        this.game.events.emit("Restart", true);
+        this.sound.stopByKey("orchestral-win");
+        this.sound.stopByKey("defeat");
         this.scene.sleep();
       },
       {
@@ -162,17 +166,23 @@ export class GameOver extends Phaser.Scene {
         yoyo: true,
         ease: "Power2",
         onComplete: () => {
-          // this.scene.stop("GameOver");
-          // this.scene.stop("HUD");
-          // this.scene.stop("MainScene");
-          // this.scene.start("Boot");
+          this.game.events.emit("Restart", false);
+          this.sound.stopByKey("orchestral-win");
+          this.sound.stopByKey("defeat");
+          this.scene.sleep();          
         },
       });
     });
 
-    // Música de game over (si existe)
-    if (this.sound.get("gameOverMusic")) {
-      this.sound.play("gameOverMusic", { loop: true, volume: 0.3 });
+    if( data.win === undefined)
+    {
+      return;
     }
+    if (data.win) {
+        this.sound.play("orchestral-win", { loop: false, volume: 0.3 });
+    } else {
+        this.sound.play("defeat", { loop: false, volume: 0.3 });
+    }
+
   }
 }
