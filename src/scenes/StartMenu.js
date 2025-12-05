@@ -9,21 +9,8 @@ export class StartMenu extends Phaser.Scene {
   create() {
     const { width, height } = this.cameras.main;
     // Play menu music if available and audio is unlocked; otherwise wait for unlock
-    if (this.cache.audio.exists("music_menu")) {
-      const playMenu = () => {
-        if (!this.menuMusic) {
-          this.menuMusic = this.sound.add("music_menu", { loop: true, volume: 0.4 });
-        }
-        if (!this.menuMusic.isPlaying) {
-          this.menuMusic.play();
-        }
-      };
-      if (this.sound.locked) {
-        this.sound.once("unlocked", playMenu);
-      } else {
-        playMenu();
-      }
-    }
+    this.menuMusic = this.sound.add("music_menu", { loop: true, volume: 0.4 });
+    this.menuMusic.play();
 
     // Add background image and scale to cover
     const bg = this.add.image(0, 0, "Fondo_ia").setOrigin(0, 0);
@@ -68,7 +55,7 @@ export class StartMenu extends Phaser.Scene {
   startGame() {
     // Start HUD and MainScene, ensure HUD is on top
     // Stop menu music before starting game
-    this.menuMusic?.stop();
+    this.menuMusic.stop();
     this.scene.start("MainScene");
   }
 

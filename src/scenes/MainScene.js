@@ -236,7 +236,7 @@ export class MainScene extends Phaser.Scene {
     });
 
     this.game.events.on("StartWave", () => {
-      this.soundSystem.playHorn(0.5);
+      this.soundSystem.playHorn(0.9);
     });
 
     this.game.events.on("WaveOver", () => {
@@ -524,11 +524,11 @@ export class MainScene extends Phaser.Scene {
 
   addInitialVillages() {
     const villages = [
-      30, 47, 33, 50, 27, 50, 33, 48, 29, 52,
+      30, 47, 33, 50, 31, 56, 33, 48, 29, 52,
 
       52, 33, 50, 34, 56, 35, 53, 37, 48, 36,
 
-      23, 26, 26, 24, 26, 27, 28, 26, 30, 15
+      23, 26, 26, 24, 26, 27, 28, 26, 30, 15, 34, 33
     ];
 
     for (let i = 0; i < villages.length; i += 2) {

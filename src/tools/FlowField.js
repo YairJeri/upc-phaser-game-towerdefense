@@ -20,7 +20,7 @@ export default class FlowField {
       this.dists = e.data;
       this.calculateAngles();
       this.smoothFlowComponents(5);
-      this.drawFlowField(graphics, 0xff0000, 2);
+      // this.drawFlowField(graphics, 0xff0000, 2);
     };
 
     this.targets = new Map();
