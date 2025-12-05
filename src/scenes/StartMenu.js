@@ -7,20 +7,20 @@ export class StartMenu extends Phaser.Scene {
   }
 
   create() {
-    this.scene.launch("MainScene")
+    this.scene.launch("MainScene");
     this.scene.get("MainScene").events.once("create", () => {
       this.scene.sleep("MainScene");
-  });
+    });
     this.scene.launch("HUD");
     this.scene.bringToTop("HUD");
     this.scene.get("HUD").events.once("create", () => {
       this.scene.sleep("HUD");
-  });
+    });
     this.scene.launch("GameOver");
     this.scene.bringToTop("GameOver");
     this.scene.get("GameOver").events.once("create", () => {
       this.scene.sleep("GameOver");
-  });
+    });
 
     const { width, height } = this.cameras.main;
     // Play menu music if available and audio is unlocked; otherwise wait for unlock
@@ -45,29 +45,50 @@ export class StartMenu extends Phaser.Scene {
     );
     // Title with subtle shadow for readability
     const titleShadowA = this.add
-      .bitmapText(0, 0, "thick_8x8", "TOWER DEFENSE", 60)
+      .bitmapText(0, 0, "thick_8x8", "Albar:\nProtector of\nkingdom", 60)
       .setOrigin(0.5)
-      .setTint(0x000000);
+      .setTint(0x000000)
+      .setCenterAlign();
     const titleShadowB = this.add
-      .bitmapText(0, 0, "thick_8x8", "TOWER DEFENSE", 60)
+      .bitmapText(0, 0, "thick_8x8", "Albar:\nProtector of\nkingdom", 60)
       .setOrigin(0.5)
-      .setTint(0x000000);
+      .setTint(0x000000)
+      .setCenterAlign();
     const titleText = this.add
-      .bitmapText(0, 0, "thick_8x8", "TOWER DEFENSE", 60)
+      .bitmapText(0, 0, "thick_8x8", "Albar:\nProtector of\nkingdom", 60)
       .setOrigin(0.5)
-      .setTint(0xffffff);
+      .setTint(0xffffff)
+      .setCenterAlign();
     // Place shadows slightly offset behind the main title
-    titleContainer.addElement(titleShadowA, titleContainer.width / 2 - 2, 90 - 2);
-    titleContainer.addElement(titleShadowB, titleContainer.width / 2 + 2, 90 + 2);
+    titleContainer.addElement(
+      titleShadowA,
+      titleContainer.width / 2 - 4,
+      90 - 4
+    );
+    titleContainer.addElement(
+      titleShadowB,
+      titleContainer.width / 2 + 4,
+      90 + 4
+    );
     titleContainer.addElement(titleText, titleContainer.width / 2, 90);
 
     // Play button
-    new UIButton(this, width / 2, height / 2 + 60, 240, 56, "Jugar", () => {
-      this.startGame();
-    }, { fontKey: "minogram", fontSize: 28 }, true);
+    new UIButton(
+      this,
+      width / 2,
+      height / 2 + 60,
+      240,
+      56,
+      "Jugar",
+      () => {
+        this.startGame();
+      },
+      { fontKey: "minogram", fontSize: 28 },
+      true
+    );
 
     this.game.events.on("Restart", (replay) => {
-      if(replay) return;
+      if (replay) return;
       this.menuMusic.play();
     });
   }
@@ -79,7 +100,7 @@ export class StartMenu extends Phaser.Scene {
   }
 
   scaleBackground(bg) {
-    if(this.cameras.main == undefined) return;
+    if (this.cameras.main == undefined) return;
     const { width, height } = this.cameras.main;
     const texWidth = bg.texture.getSourceImage().width;
     const texHeight = bg.texture.getSourceImage().height;
