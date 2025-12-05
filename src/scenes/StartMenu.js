@@ -13,10 +13,14 @@ export class StartMenu extends Phaser.Scene {
   });
     this.scene.launch("HUD");
     this.scene.bringToTop("HUD");
-    this.scene.sleep("HUD");
+    this.scene.get("HUD").events.once("create", () => {
+      this.scene.sleep("HUD");
+  });
     this.scene.launch("GameOver");
     this.scene.bringToTop("GameOver");
-    this.scene.sleep("GameOver");
+    this.scene.get("GameOver").events.once("create", () => {
+      this.scene.sleep("GameOver");
+  });
 
     const { width, height } = this.cameras.main;
     // Play menu music if available and audio is unlocked; otherwise wait for unlock
